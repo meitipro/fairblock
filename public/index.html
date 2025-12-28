@@ -1,0 +1,1923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fairblock | Pre-Execution Privacy Network</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0a0b;
+            --bg-secondary: #111113;
+            --bg-tertiary: #18181b;
+            --accent-primary: #00f5d4;
+            --accent-secondary: #7b2cbf;
+            --accent-gradient: linear-gradient(135deg, #00f5d4 0%, #7b2cbf 50%, #ff6b6b 100%);
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --border-color: rgba(255,255,255,0.08);
+            --glow-primary: 0 0 60px rgba(0, 245, 212, 0.15);
+            --glow-secondary: 0 0 80px rgba(123, 44, 191, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        #root {
+            min-height: 100vh;
+        }
+
+        ::selection {
+            background: var(--accent-primary);
+            color: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-primary);
+            border-radius: 4px;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        .noise-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        }
+    </style>
+</head>
+<body>
+    <div class="noise-overlay"></div>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, createContext, useContext } = React;
+
+        // Auth Context
+        const AuthContext = createContext(null);
+
+        const useAuth = () => useContext(AuthContext);
+
+        // API Base URL - automatically uses relative path for Vercel
+        const API_URL = '/api';
+
+        // ============ COMPONENTS ============
+
+        // Animated Background
+        const AnimatedBackground = () => {
+            return (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    pointerEvents: 'none',
+                    zIndex: 0,
+                    overflow: 'hidden'
+                }}>
+                    {/* Gradient Orbs */}
+                    <div style={{
+                        position: 'absolute',
+                        top: '-20%',
+                        left: '-10%',
+                        width: '50vw',
+                        height: '50vw',
+                        background: 'radial-gradient(circle, rgba(0, 245, 212, 0.08) 0%, transparent 70%)',
+                        animation: 'pulse 8s ease-in-out infinite',
+                        filter: 'blur(40px)'
+                    }} />
+                    <div style={{
+                        position: 'absolute',
+                        bottom: '-20%',
+                        right: '-10%',
+                        width: '60vw',
+                        height: '60vw',
+                        background: 'radial-gradient(circle, rgba(123, 44, 191, 0.08) 0%, transparent 70%)',
+                        animation: 'pulse 10s ease-in-out infinite 2s',
+                        filter: 'blur(60px)'
+                    }} />
+                    {/* Grid Pattern */}
+                    <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        backgroundImage: `
+                            linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                            linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)
+                        `,
+                        backgroundSize: '60px 60px',
+                        opacity: 0.5
+                    }} />
+                </div>
+            );
+        };
+
+        // Navigation
+        const Navigation = ({ currentPage, setCurrentPage }) => {
+            const { user, logout } = useAuth();
+            const [scrolled, setScrolled] = useState(false);
+
+            useEffect(() => {
+                const handleScroll = () => setScrolled(window.scrollY > 50);
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+
+            const navStyle = {
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                zIndex: 1000,
+                padding: '20px 60px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                transition: 'all 0.3s ease',
+                background: scrolled ? 'rgba(10, 10, 11, 0.9)' : 'transparent',
+                backdropFilter: scrolled ? 'blur(20px)' : 'none',
+                borderBottom: scrolled ? '1px solid var(--border-color)' : 'none'
+            };
+
+            const logoStyle = {
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                cursor: 'pointer',
+                fontFamily: "'Syne', sans-serif",
+                fontWeight: 800,
+                fontSize: '24px',
+                letterSpacing: '-0.5px'
+            };
+
+            const navLinks = {
+                display: 'flex',
+                gap: '8px',
+                alignItems: 'center'
+            };
+
+            const linkStyle = (isActive) => ({
+                padding: '10px 20px',
+                background: isActive ? 'rgba(0, 245, 212, 0.1)' : 'transparent',
+                border: '1px solid',
+                borderColor: isActive ? 'var(--accent-primary)' : 'var(--border-color)',
+                borderRadius: '100px',
+                color: isActive ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                cursor: 'pointer',
+                fontFamily: "'Space Mono', monospace",
+                fontSize: '13px',
+                transition: 'all 0.3s ease',
+                textTransform: 'uppercase',
+                letterSpacing: '1px'
+            });
+
+            return (
+                <nav style={navStyle}>
+                    <div style={logoStyle} onClick={() => setCurrentPage('home')}>
+                        <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
+                            <circle cx="20" cy="20" r="18" stroke="url(#grad1)" strokeWidth="2" fill="none"/>
+                            <path d="M20 8L20 32M8 20L32 20M12 12L28 28M28 12L12 28" stroke="var(--accent-primary)" strokeWidth="1.5" opacity="0.6"/>
+                            <circle cx="20" cy="20" r="6" fill="var(--accent-primary)"/>
+                            <defs>
+                                <linearGradient id="grad1" x1="0" y1="0" x2="40" y2="40">
+                                    <stop offset="0%" stopColor="#00f5d4"/>
+                                    <stop offset="100%" stopColor="#7b2cbf"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                        <span>FAIRBLOCK</span>
+                    </div>
+                    <div style={navLinks}>
+                        {['home', 'about', 'game', 'blog'].map(page => (
+                            <button
+                                key={page}
+                                style={linkStyle(currentPage === page)}
+                                onClick={() => setCurrentPage(page)}
+                                onMouseEnter={(e) => {
+                                    if (currentPage !== page) {
+                                        e.target.style.borderColor = 'var(--accent-primary)';
+                                        e.target.style.color = 'var(--text-primary)';
+                                    }
+                                }}
+                                onMouseLeave={(e) => {
+                                    if (currentPage !== page) {
+                                        e.target.style.borderColor = 'var(--border-color)';
+                                        e.target.style.color = 'var(--text-secondary)';
+                                    }
+                                }}
+                            >
+                                {page}
+                            </button>
+                        ))}
+                        {user ? (
+                            <>
+                                <button
+                                    style={linkStyle(currentPage === 'admin')}
+                                    onClick={() => setCurrentPage('admin')}
+                                >
+                                    Admin
+                                </button>
+                                <button
+                                    style={{...linkStyle(false), background: 'rgba(255, 107, 107, 0.1)', borderColor: '#ff6b6b', color: '#ff6b6b'}}
+                                    onClick={logout}
+                                >
+                                    Logout
+                                </button>
+                            </>
+                        ) : (
+                            <button
+                                style={linkStyle(currentPage === 'login')}
+                                onClick={() => setCurrentPage('login')}
+                            >
+                                Login
+                            </button>
+                        )}
+                    </div>
+                </nav>
+            );
+        };
+
+        // Hero Section
+        const HeroSection = ({ setCurrentPage }) => {
+            const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+            useEffect(() => {
+                const handleMouseMove = (e) => {
+                    setMousePos({ x: e.clientX, y: e.clientY });
+                };
+                window.addEventListener('mousemove', handleMouseMove);
+                return () => window.removeEventListener('mousemove', handleMouseMove);
+            }, []);
+
+            return (
+                <section style={{
+                    minHeight: '100vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    padding: '120px 60px 60px',
+                    position: 'relative',
+                    textAlign: 'center'
+                }}>
+                    {/* Floating Crypto Symbol */}
+                    <div style={{
+                        marginBottom: '40px',
+                        animation: 'float 6s ease-in-out infinite'
+                    }}>
+                        <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
+                            <circle cx="60" cy="60" r="55" stroke="url(#heroGrad)" strokeWidth="2" strokeDasharray="8 4"/>
+                            <circle cx="60" cy="60" r="40" stroke="var(--accent-primary)" strokeWidth="1" opacity="0.5"/>
+                            <circle cx="60" cy="60" r="25" fill="url(#heroGrad)" opacity="0.2"/>
+                            <path d="M60 20V100M20 60H100" stroke="var(--accent-primary)" strokeWidth="2" opacity="0.3"/>
+                            <circle cx="60" cy="60" r="12" fill="var(--accent-primary)"/>
+                            <text x="60" y="65" textAnchor="middle" fill="var(--bg-primary)" fontFamily="Space Mono" fontSize="14" fontWeight="bold">FB</text>
+                            <defs>
+                                <linearGradient id="heroGrad" x1="0" y1="0" x2="120" y2="120">
+                                    <stop offset="0%" stopColor="#00f5d4"/>
+                                    <stop offset="50%" stopColor="#7b2cbf"/>
+                                    <stop offset="100%" stopColor="#ff6b6b"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+
+                    {/* Title */}
+                    <h1 style={{
+                        fontFamily: "'Syne', sans-serif",
+                        fontSize: 'clamp(48px, 10vw, 120px)',
+                        fontWeight: 800,
+                        lineHeight: 1,
+                        marginBottom: '24px',
+                        background: 'var(--accent-gradient)',
+                        backgroundSize: '200% 200%',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        animation: 'gradient-shift 8s ease infinite, fadeInUp 1s ease'
+                    }}>
+                        FAIRBLOCK
+                    </h1>
+
+                    {/* Tagline */}
+                    <p style={{
+                        fontFamily: "'Space Mono', monospace",
+                        fontSize: '18px',
+                        color: 'var(--text-secondary)',
+                        marginBottom: '16px',
+                        letterSpacing: '4px',
+                        textTransform: 'uppercase',
+                        animation: 'fadeInUp 1s ease 0.2s both'
+                    }}>
+                        Pre-Execution Privacy
+                    </p>
+
+                    <h2 style={{
+                        fontFamily: "'Syne', sans-serif",
+                        fontSize: 'clamp(24px, 5vw, 48px)',
+                        fontWeight: 600,
+                        color: 'var(--text-primary)',
+                        marginBottom: '40px',
+                        animation: 'fadeInUp 1s ease 0.4s both'
+                    }}>
+                        One Network.<br/>
+                        <span style={{ color: 'var(--accent-primary)' }}>Infinite Privacy.</span>
+                    </h2>
+
+                    {/* Description */}
+                    <p style={{
+                        maxWidth: '600px',
+                        fontSize: '16px',
+                        color: 'var(--text-secondary)',
+                        marginBottom: '48px',
+                        lineHeight: 1.8,
+                        animation: 'fadeInUp 1s ease 0.6s both'
+                    }}>
+                        The decentralized cryptographic network providing confidential on-chain execution 
+                        and MEV protection across all ecosystems.
+                    </p>
+
+                    {/* CTA Buttons */}
+                    <div style={{
+                        display: 'flex',
+                        gap: '16px',
+                        animation: 'fadeInUp 1s ease 0.8s both'
+                    }}>
+                        <button
+                            onClick={() => setCurrentPage('game')}
+                            style={{
+                                padding: '16px 40px',
+                                background: 'var(--accent-primary)',
+                                border: 'none',
+                                borderRadius: '100px',
+                                color: 'var(--bg-primary)',
+                                fontFamily: "'Space Mono', monospace",
+                                fontSize: '14px',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                textTransform: 'uppercase',
+                                letterSpacing: '2px',
+                                transition: 'all 0.3s ease',
+                                boxShadow: '0 0 30px rgba(0, 245, 212, 0.3)'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.target.style.transform = 'translateY(-3px)';
+                                e.target.style.boxShadow = '0 10px 40px rgba(0, 245, 212, 0.4)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.transform = 'translateY(0)';
+                                e.target.style.boxShadow = '0 0 30px rgba(0, 245, 212, 0.3)';
+                            }}
+                        >
+                            Enter Game
+                        </button>
+                        <button
+                            onClick={() => setCurrentPage('about')}
+                            style={{
+                                padding: '16px 40px',
+                                background: 'transparent',
+                                border: '2px solid var(--border-color)',
+                                borderRadius: '100px',
+                                color: 'var(--text-primary)',
+                                fontFamily: "'Space Mono', monospace",
+                                fontSize: '14px',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                textTransform: 'uppercase',
+                                letterSpacing: '2px',
+                                transition: 'all 0.3s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.target.style.borderColor = 'var(--accent-primary)';
+                                e.target.style.color = 'var(--accent-primary)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.borderColor = 'var(--border-color)';
+                                e.target.style.color = 'var(--text-primary)';
+                            }}
+                        >
+                            Learn More
+                        </button>
+                    </div>
+
+                    {/* Scroll Indicator */}
+                    <div style={{
+                        position: 'absolute',
+                        bottom: '40px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '8px',
+                        color: 'var(--text-muted)',
+                        animation: 'fadeInUp 1s ease 1s both'
+                    }}>
+                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: '11px', letterSpacing: '2px' }}>SCROLL</span>
+                        <div style={{
+                            width: '1px',
+                            height: '40px',
+                            background: 'linear-gradient(180deg, var(--accent-primary), transparent)'
+                        }} />
+                    </div>
+                </section>
+            );
+        };
+
+        // Features Section
+        const FeaturesSection = () => {
+            const features = [
+                {
+                    icon: '🔐',
+                    title: 'Threshold IBE',
+                    description: 'Identity-Based Encryption with distributed key generation for trustless privacy.'
+                },
+                {
+                    icon: '⚡',
+                    title: 'MEV Protection',
+                    description: 'Eliminate front-running and sandwich attacks with encrypted mempools.'
+                },
+                {
+                    icon: '🌐',
+                    title: 'Cross-Chain',
+                    description: 'Privacy infrastructure for Cosmos, EVM, Solana, and beyond.'
+                },
+                {
+                    icon: '🎯',
+                    title: 'Conditional Reveal',
+                    description: 'Decrypt only when conditions are met - time, block, or price triggers.'
+                }
+            ];
+
+            return (
+                <section style={{
+                    padding: '120px 60px',
+                    position: 'relative'
+                }}>
+                    <div style={{
+                        maxWidth: '1200px',
+                        margin: '0 auto'
+                    }}>
+                        <h2 style={{
+                            fontFamily: "'Syne', sans-serif",
+                            fontSize: '48px',
+                            fontWeight: 700,
+                            marginBottom: '60px',
+                            textAlign: 'center'
+                        }}>
+                            <span style={{ color: 'var(--accent-primary)' }}>Cryptographic</span> Primitives
+                        </h2>
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+                            gap: '24px'
+                        }}>
+                            {features.map((feature, i) => (
+                                <div
+                                    key={i}
+                                    style={{
+                                        padding: '40px',
+                                        background: 'var(--bg-secondary)',
+                                        border: '1px solid var(--border-color)',
+                                        borderRadius: '24px',
+                                        transition: 'all 0.4s ease',
+                                        cursor: 'default',
+                                        animation: `fadeInUp 0.6s ease ${i * 0.1}s both`
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(-8px)';
+                                        e.currentTarget.style.borderColor = 'var(--accent-primary)';
+                                        e.currentTarget.style.boxShadow = 'var(--glow-primary)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.borderColor = 'var(--border-color)';
+                                        e.currentTarget.style.boxShadow = 'none';
+                                    }}
+                                >
+                                    <div style={{ fontSize: '48px', marginBottom: '20px' }}>{feature.icon}</div>
+                                    <h3 style={{
+                                        fontFamily: "'Syne', sans-serif",
+                                        fontSize: '24px',
+                                        fontWeight: 600,
+                                        marginBottom: '12px',
+                                        color: 'var(--text-primary)'
+                                    }}>
+                                        {feature.title}
+                                    </h3>
+                                    <p style={{
+                                        color: 'var(--text-secondary)',
+                                        fontSize: '15px',
+                                        lineHeight: 1.7
+                                    }}>
+                                        {feature.description}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+
+        // Stats Section
+        const StatsSection = () => {
+            const stats = [
+                { value: '1M+', label: 'Test Transactions' },
+                { value: '50+', label: 'Validators' },
+                { value: '$2.5M', label: 'Funding Raised' },
+                { value: '∞', label: 'Privacy Guaranteed' }
+            ];
+
+            return (
+                <section style={{
+                    padding: '80px 60px',
+                    background: 'var(--bg-secondary)',
+                    borderTop: '1px solid var(--border-color)',
+                    borderBottom: '1px solid var(--border-color)'
+                }}>
+                    <div style={{
+                        maxWidth: '1200px',
+                        margin: '0 auto',
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(4, 1fr)',
+                        gap: '40px',
+                        textAlign: 'center'
+                    }}>
+                        {stats.map((stat, i) => (
+                            <div key={i}>
+                                <div style={{
+                                    fontFamily: "'Syne', sans-serif",
+                                    fontSize: '56px',
+                                    fontWeight: 800,
+                                    background: 'var(--accent-gradient)',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent',
+                                    marginBottom: '8px'
+                                }}>
+                                    {stat.value}
+                                </div>
+                                <div style={{
+                                    fontFamily: "'Space Mono', monospace",
+                                    fontSize: '13px',
+                                    color: 'var(--text-muted)',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '2px'
+                                }}>
+                                    {stat.label}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            );
+        };
+
+        // Footer
+        const Footer = () => {
+            return (
+                <footer style={{
+                    padding: '60px',
+                    background: 'var(--bg-secondary)',
+                    borderTop: '1px solid var(--border-color)',
+                    textAlign: 'center'
+                }}>
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        gap: '12px',
+                        marginBottom: '20px',
+                        fontFamily: "'Syne', sans-serif",
+                        fontWeight: 800,
+                        fontSize: '20px'
+                    }}>
+                        <svg width="24" height="24" viewBox="0 0 40 40" fill="none">
+                            <circle cx="20" cy="20" r="18" stroke="var(--accent-primary)" strokeWidth="2"/>
+                            <circle cx="20" cy="20" r="6" fill="var(--accent-primary)"/>
+                        </svg>
+                        FAIRBLOCK
+                    </div>
+                    <p style={{
+                        color: 'var(--text-muted)',
+                        fontFamily: "'Space Mono', monospace",
+                        fontSize: '12px',
+                        letterSpacing: '1px'
+                    }}>
+                        © 2025 Fairblock Network. Pre-Execution Privacy for All.
+                    </p>
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        gap: '24px',
+                        marginTop: '24px'
+                    }}>
+                        {['Twitter', 'Discord', 'GitHub', 'Docs'].map(link => (
+                            <a
+                                key={link}
+                                href="#"
+                                style={{
+                                    color: 'var(--text-secondary)',
+                                    textDecoration: 'none',
+                                    fontFamily: "'Space Mono', monospace",
+                                    fontSize: '13px',
+                                    transition: 'color 0.3s ease'
+                                }}
+                                onMouseEnter={(e) => e.target.style.color = 'var(--accent-primary)'}
+                                onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}
+                            >
+                                {link}
+                            </a>
+                        ))}
+                    </div>
+                </footer>
+            );
+        };
+
+        // ============ PAGES ============
+
+        // Home Page
+        const HomePage = ({ setCurrentPage }) => {
+            return (
+                <>
+                    <HeroSection setCurrentPage={setCurrentPage} />
+                    <FeaturesSection />
+                    <StatsSection />
+                    <Footer />
+                </>
+            );
+        };
+
+        // About Page
+        const AboutPage = () => {
+            const sections = [
+                {
+                    title: 'What is Fairblock?',
+                    content: `Fairblock is a decentralized cryptographic network designed to provide "pre-execution privacy" and confidential on-chain execution across ecosystems. Its core is FairyRing, a Cosmos-SDK based chain that acts as a key generation and confidential compute layer servicing other blockchains.`
+                },
+                {
+                    title: 'Threshold Identity-Based Encryption',
+                    content: `Fairblock leverages advanced cryptography – notably Threshold Identity-Based Encryption (tIBE) and witness encryption – to allow transactions to be submitted in encrypted form and only decrypted under certain conditions (e.g. after final ordering, a time delay, or a price trigger).`
+                },
+                {
+                    title: 'How It Works',
+                    content: `Users encrypt their transaction payload with a key tied to a future block number. Once that block is sealed, the network's validators collaboratively derive the corresponding private key and decrypt all transactions destined for that block in one go. This eliminates the possibility of frontrunning or MEV based on transaction contents.`
+                },
+                {
+                    title: 'Use Cases',
+                    content: `Sealed-bid auctions, private voting, MEV-protected trading, confidential stablecoin transfers, on-chain gaming with hidden state, and much more. Any scenario where information asymmetry or secrecy is integral can be implemented on-chain with Fairblock's toolkit.`
+                }
+            ];
+
+            return (
+                <div style={{ paddingTop: '100px', minHeight: '100vh' }}>
+                    <section style={{ padding: '60px', maxWidth: '900px', margin: '0 auto' }}>
+                        <h1 style={{
+                            fontFamily: "'Syne', sans-serif",
+                            fontSize: '64px',
+                            fontWeight: 800,
+                            marginBottom: '24px',
+                            background: 'var(--accent-gradient)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent'
+                        }}>
+                            About Fairblock
+                        </h1>
+                        <p style={{
+                            fontFamily: "'Space Mono', monospace",
+                            fontSize: '14px',
+                            color: 'var(--accent-primary)',
+                            letterSpacing: '3px',
+                            textTransform: 'uppercase',
+                            marginBottom: '60px'
+                        }}>
+                            The Privacy Infrastructure Layer
+                        </p>
+
+                        {sections.map((section, i) => (
+                            <div
+                                key={i}
+                                style={{
+                                    marginBottom: '48px',
+                                    padding: '40px',
+                                    background: 'var(--bg-secondary)',
+                                    border: '1px solid var(--border-color)',
+                                    borderRadius: '20px',
+                                    animation: `fadeInUp 0.6s ease ${i * 0.1}s both`
+                                }}
+                            >
+                                <h2 style={{
+                                    fontFamily: "'Syne', sans-serif",
+                                    fontSize: '28px',
+                                    fontWeight: 700,
+                                    marginBottom: '16px',
+                                    color: 'var(--accent-primary)'
+                                }}>
+                                    {section.title}
+                                </h2>
+                                <p style={{
+                                    color: 'var(--text-secondary)',
+                                    fontSize: '16px',
+                                    lineHeight: 1.8
+                                }}>
+                                    {section.content}
+                                </p>
+                            </div>
+                        ))}
+
+                        {/* Team Section */}
+                        <div style={{
+                            marginTop: '80px',
+                            padding: '40px',
+                            background: 'var(--bg-tertiary)',
+                            border: '1px solid var(--border-color)',
+                            borderRadius: '20px'
+                        }}>
+                            <h2 style={{
+                                fontFamily: "'Syne', sans-serif",
+                                fontSize: '32px',
+                                fontWeight: 700,
+                                marginBottom: '32px',
+                                textAlign: 'center'
+                            }}>
+                                Core Team
+                            </h2>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px' }}>
+                                <div style={{
+                                    padding: '24px',
+                                    background: 'var(--bg-secondary)',
+                                    borderRadius: '16px',
+                                    textAlign: 'center'
+                                }}>
+                                    <div style={{
+                                        width: '80px',
+                                        height: '80px',
+                                        borderRadius: '50%',
+                                        background: 'var(--accent-gradient)',
+                                        margin: '0 auto 16px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '32px'
+                                    }}>
+                                        👨‍💻
+                                    </div>
+                                    <h3 style={{ fontFamily: "'Syne', sans-serif", fontSize: '20px', marginBottom: '8px' }}>Peyman Momeni</h3>
+                                    <p style={{ color: 'var(--accent-primary)', fontFamily: "'Space Mono', monospace", fontSize: '12px' }}>Co-founder & CEO</p>
+                                </div>
+                                <div style={{
+                                    padding: '24px',
+                                    background: 'var(--bg-secondary)',
+                                    borderRadius: '16px',
+                                    textAlign: 'center'
+                                }}>
+                                    <div style={{
+                                        width: '80px',
+                                        height: '80px',
+                                        borderRadius: '50%',
+                                        background: 'var(--accent-gradient)',
+                                        margin: '0 auto 16px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '32px'
+                                    }}>
+                                        🔬
+                                    </div>
+                                    <h3 style={{ fontFamily: "'Syne', sans-serif", fontSize: '20px', marginBottom: '8px' }}>@0xbyyou</h3>
+                                    <p style={{ color: 'var(--accent-primary)', fontFamily: "'Space Mono', monospace", fontSize: '12px' }}>Co-founder & Lead Engineer</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <Footer />
+                </div>
+            );
+        };
+
+        // Game Page - Encryption Puzzle Game
+        const GamePage = () => {
+            const [gameState, setGameState] = useState('menu'); // menu, playing, won
+            const [level, setLevel] = useState(1);
+            const [message, setMessage] = useState('');
+            const [encrypted, setEncrypted] = useState('');
+            const [guess, setGuess] = useState('');
+            const [hint, setHint] = useState('');
+            const [score, setScore] = useState(0);
+            const [timeLeft, setTimeLeft] = useState(60);
+
+            const messages = [
+                { msg: 'FAIRBLOCK', hint: 'The name of this project' },
+                { msg: 'PRIVACY', hint: 'What we protect' },
+                { msg: 'THRESHOLD', hint: 'Type of encryption we use' },
+                { msg: 'COSMOS', hint: 'SDK we build on' },
+                { msg: 'DECRYPTION', hint: 'Opposite of encryption' },
+                { msg: 'VALIDATOR', hint: 'Nodes that secure the network' },
+                { msg: 'MEMPOOL', hint: 'Where transactions wait' },
+                { msg: 'AUCTION', hint: 'Sealed-bid ____' }
+            ];
+
+            const caesarEncrypt = (text, shift) => {
+                return text.split('').map(char => {
+                    if (char.match(/[A-Z]/)) {
+                        return String.fromCharCode(((char.charCodeAt(0) - 65 + shift) % 26) + 65);
+                    }
+                    return char;
+                }).join('');
+            };
+
+            const startGame = () => {
+                setGameState('playing');
+                setLevel(1);
+                setScore(0);
+                setTimeLeft(60);
+                loadLevel(1);
+            };
+
+            const loadLevel = (lvl) => {
+                const idx = (lvl - 1) % messages.length;
+                const { msg, hint: h } = messages[idx];
+                setMessage(msg);
+                setEncrypted(caesarEncrypt(msg, lvl + 2));
+                setHint(h);
+                setGuess('');
+            };
+
+            useEffect(() => {
+                if (gameState === 'playing' && timeLeft > 0) {
+                    const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
+                    return () => clearTimeout(timer);
+                } else if (timeLeft === 0 && gameState === 'playing') {
+                    setGameState('menu');
+                }
+            }, [timeLeft, gameState]);
+
+            const checkGuess = () => {
+                if (guess.toUpperCase() === message) {
+                    const points = Math.max(100 - (60 - timeLeft) * 2, 10);
+                    setScore(score + points);
+                    if (level >= 8) {
+                        setGameState('won');
+                    } else {
+                        setLevel(level + 1);
+                        setTimeLeft(timeLeft + 15);
+                        loadLevel(level + 1);
+                    }
+                }
+            };
+
+            const containerStyle = {
+                paddingTop: '100px',
+                minHeight: '100vh',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '60px'
+            };
+
+            if (gameState === 'menu') {
+                return (
+                    <div style={containerStyle}>
+                        <h1 style={{
+                            fontFamily: "'Syne', sans-serif",
+                            fontSize: '56px',
+                            fontWeight: 800,
+                            marginBottom: '24px',
+                            textAlign: 'center',
+                            background: 'var(--accent-gradient)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent'
+                        }}>
+                            🔐 Decrypt the Message
+                        </h1>
+                        <p style={{
+                            color: 'var(--text-secondary)',
+                            fontSize: '18px',
+                            marginBottom: '40px',
+                            textAlign: 'center',
+                            maxWidth: '500px'
+                        }}>
+                            Test your cryptography skills! Decrypt Caesar cipher messages before time runs out.
+                            Each level increases the difficulty.
+                        </p>
+                        <button
+                            onClick={startGame}
+                            style={{
+                                padding: '20px 60px',
+                                background: 'var(--accent-primary)',
+                                border: 'none',
+                                borderRadius: '100px',
+                                color: 'var(--bg-primary)',
+                                fontFamily: "'Syne', sans-serif",
+                                fontSize: '20px',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                transition: 'all 0.3s ease',
+                                boxShadow: '0 0 40px rgba(0, 245, 212, 0.3)'
+                            }}
+                            onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
+                            onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                        >
+                            START GAME
+                        </button>
+                    </div>
+                );
+            }
+
+            if (gameState === 'won') {
+                return (
+                    <div style={containerStyle}>
+                        <h1 style={{
+                            fontFamily: "'Syne', sans-serif",
+                            fontSize: '72px',
+                            fontWeight: 800,
+                            marginBottom: '24px',
+                            color: 'var(--accent-primary)'
+                        }}>
+                            🎉 YOU WON!
+                        </h1>
+                        <p style={{
+                            fontFamily: "'Space Mono', monospace",
+                            fontSize: '24px',
+                            color: 'var(--text-secondary)',
+                            marginBottom: '16px'
+                        }}>
+                            Final Score: <span style={{ color: 'var(--accent-primary)' }}>{score}</span>
+                        </p>
+                        <p style={{
+                            color: 'var(--text-muted)',
+                            marginBottom: '40px'
+                        }}>
+                            You've mastered the art of decryption!
+                        </p>
+                        <button
+                            onClick={startGame}
+                            style={{
+                                padding: '16px 40px',
+                                background: 'var(--accent-primary)',
+                                border: 'none',
+                                borderRadius: '100px',
+                                color: 'var(--bg-primary)',
+                                fontFamily: "'Space Mono', monospace",
+                                fontSize: '14px',
+                                fontWeight: 700,
+                                cursor: 'pointer'
+                            }}
+                        >
+                            PLAY AGAIN
+                        </button>
+                    </div>
+                );
+            }
+
+            return (
+                <div style={containerStyle}>
+                    {/* Game Header */}
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        width: '100%',
+                        maxWidth: '600px',
+                        marginBottom: '40px'
+                    }}>
+                        <div style={{
+                            fontFamily: "'Space Mono', monospace",
+                            fontSize: '14px',
+                            color: 'var(--text-muted)'
+                        }}>
+                            LEVEL <span style={{ color: 'var(--accent-primary)', fontSize: '24px' }}>{level}</span>/8
+                        </div>
+                        <div style={{
+                            fontFamily: "'Space Mono', monospace",
+                            fontSize: '14px',
+                            color: 'var(--text-muted)'
+                        }}>
+                            SCORE: <span style={{ color: 'var(--accent-primary)' }}>{score}</span>
+                        </div>
+                        <div style={{
+                            fontFamily: "'Space Mono', monospace",
+                            fontSize: '14px',
+                            color: timeLeft < 15 ? '#ff6b6b' : 'var(--text-muted)'
+                        }}>
+                            TIME: <span style={{ color: timeLeft < 15 ? '#ff6b6b' : 'var(--accent-primary)' }}>{timeLeft}s</span>
+                        </div>
+                    </div>
+
+                    {/* Encrypted Message Display */}
+                    <div style={{
+                        padding: '40px 60px',
+                        background: 'var(--bg-secondary)',
+                        border: '2px solid var(--accent-primary)',
+                        borderRadius: '20px',
+                        marginBottom: '32px',
+                        boxShadow: 'var(--glow-primary)'
+                    }}>
+                        <p style={{
+                            fontFamily: "'Space Mono', monospace",
+                            fontSize: '11px',
+                            color: 'var(--text-muted)',
+                            marginBottom: '12px',
+                            textTransform: 'uppercase',
+                            letterSpacing: '2px'
+                        }}>
+                            Encrypted Message:
+                        </p>
+                        <p style={{
+                            fontFamily: "'Syne', sans-serif",
+                            fontSize: '36px',
+                            fontWeight: 700,
+                            color: 'var(--accent-primary)',
+                            letterSpacing: '8px'
+                        }}>
+                            {encrypted}
+                        </p>
+                    </div>
+
+                    {/* Hint */}
+                    <p style={{
+                        fontFamily: "'Space Mono', monospace",
+                        fontSize: '14px',
+                        color: 'var(--text-secondary)',
+                        marginBottom: '32px'
+                    }}>
+                        💡 Hint: {hint}
+                    </p>
+
+                    {/* Input */}
+                    <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
+                        <input
+                            type="text"
+                            value={guess}
+                            onChange={(e) => setGuess(e.target.value.toUpperCase())}
+                            onKeyPress={(e) => e.key === 'Enter' && checkGuess()}
+                            placeholder="Your guess..."
+                            style={{
+                                padding: '16px 24px',
+                                width: '300px',
+                                background: 'var(--bg-tertiary)',
+                                border: '2px solid var(--border-color)',
+                                borderRadius: '12px',
+                                color: 'var(--text-primary)',
+                                fontFamily: "'Space Mono', monospace",
+                                fontSize: '18px',
+                                letterSpacing: '4px',
+                                textTransform: 'uppercase',
+                                outline: 'none',
+                                transition: 'border-color 0.3s ease'
+                            }}
+                            onFocus={(e) => e.target.style.borderColor = 'var(--accent-primary)'}
+                            onBlur={(e) => e.target.style.borderColor = 'var(--border-color)'}
+                        />
+                        <button
+                            onClick={checkGuess}
+                            style={{
+                                padding: '16px 32px',
+                                background: 'var(--accent-primary)',
+                                border: 'none',
+                                borderRadius: '12px',
+                                color: 'var(--bg-primary)',
+                                fontFamily: "'Space Mono', monospace",
+                                fontSize: '14px',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                transition: 'all 0.3s ease'
+                            }}
+                        >
+                            DECRYPT
+                        </button>
+                    </div>
+
+                    {/* Info */}
+                    <p style={{
+                        fontFamily: "'Space Mono', monospace",
+                        fontSize: '12px',
+                        color: 'var(--text-muted)'
+                    }}>
+                        Caesar Cipher - Shift: {level + 2}
+                    </p>
+                </div>
+            );
+        };
+
+        // Blog Page
+        const BlogPage = () => {
+            const [posts, setPosts] = useState([]);
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                fetchPosts();
+            }, []);
+
+            const fetchPosts = async () => {
+                try {
+                    const res = await fetch(`${API_URL}/posts`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        setPosts(data);
+                    }
+                } catch (err) {
+                    console.error('Error fetching posts:', err);
+                    // Fallback demo posts
+                    setPosts([
+                        {
+                            id: 1,
+                            title: 'Introducing Fairblock: Pre-Execution Privacy',
+                            excerpt: 'Learn how Fairblock revolutionizes blockchain privacy with threshold encryption...',
+                            date: '2025-01-15',
+                            category: 'Announcement'
+                        },
+                        {
+                            id: 2,
+                            title: 'Understanding MEV and How Fairblock Solves It',
+                            excerpt: 'Maximal Extractable Value (MEV) costs DeFi users billions. Here\'s how we stop it...',
+                            date: '2025-01-10',
+                            category: 'Technical'
+                        },
+                        {
+                            id: 3,
+                            title: 'Fairblock Public Testnet is Live',
+                            excerpt: 'We\'re excited to announce that the FairyRing public testnet is now available...',
+                            date: '2025-01-05',
+                            category: 'Update'
+                        }
+                    ]);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const categoryColors = {
+                'Announcement': '#00f5d4',
+                'Technical': '#7b2cbf',
+                'Update': '#ff6b6b',
+                'Tutorial': '#ffd93d'
+            };
+
+            return (
+                <div style={{ paddingTop: '100px', minHeight: '100vh' }}>
+                    <section style={{ padding: '60px', maxWidth: '1000px', margin: '0 auto' }}>
+                        <h1 style={{
+                            fontFamily: "'Syne', sans-serif",
+                            fontSize: '64px',
+                            fontWeight: 800,
+                            marginBottom: '24px',
+                            background: 'var(--accent-gradient)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent'
+                        }}>
+                            Blog
+                        </h1>
+                        <p style={{
+                            fontFamily: "'Space Mono', monospace",
+                            fontSize: '14px',
+                            color: 'var(--text-secondary)',
+                            letterSpacing: '2px',
+                            marginBottom: '60px'
+                        }}>
+                            Latest updates, technical deep-dives, and announcements
+                        </p>
+
+                        {loading ? (
+                            <div style={{ textAlign: 'center', padding: '60px' }}>
+                                <div style={{
+                                    width: '50px',
+                                    height: '50px',
+                                    border: '3px solid var(--border-color)',
+                                    borderTopColor: 'var(--accent-primary)',
+                                    borderRadius: '50%',
+                                    animation: 'spin 1s linear infinite',
+                                    margin: '0 auto'
+                                }} />
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                                {posts.map((post, i) => (
+                                    <article
+                                        key={post.id}
+                                        style={{
+                                            padding: '40px',
+                                            background: 'var(--bg-secondary)',
+                                            border: '1px solid var(--border-color)',
+                                            borderRadius: '20px',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.3s ease',
+                                            animation: `fadeInUp 0.6s ease ${i * 0.1}s both`
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.borderColor = 'var(--accent-primary)';
+                                            e.currentTarget.style.transform = 'translateX(8px)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.borderColor = 'var(--border-color)';
+                                            e.currentTarget.style.transform = 'translateX(0)';
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
+                                            <span style={{
+                                                padding: '6px 14px',
+                                                background: `${categoryColors[post.category] || 'var(--accent-primary)'}20`,
+                                                color: categoryColors[post.category] || 'var(--accent-primary)',
+                                                borderRadius: '100px',
+                                                fontFamily: "'Space Mono', monospace",
+                                                fontSize: '11px',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '1px'
+                                            }}>
+                                                {post.category}
+                                            </span>
+                                            <span style={{
+                                                fontFamily: "'Space Mono', monospace",
+                                                fontSize: '12px',
+                                                color: 'var(--text-muted)'
+                                            }}>
+                                                {new Date(post.date).toLocaleDateString('en-US', { 
+                                                    year: 'numeric', 
+                                                    month: 'long', 
+                                                    day: 'numeric' 
+                                                })}
+                                            </span>
+                                        </div>
+                                        <h2 style={{
+                                            fontFamily: "'Syne', sans-serif",
+                                            fontSize: '28px',
+                                            fontWeight: 700,
+                                            marginBottom: '12px',
+                                            color: 'var(--text-primary)'
+                                        }}>
+                                            {post.title}
+                                        </h2>
+                                        <p style={{
+                                            color: 'var(--text-secondary)',
+                                            fontSize: '16px',
+                                            lineHeight: 1.7
+                                        }}>
+                                            {post.excerpt}
+                                        </p>
+                                        <div style={{
+                                            marginTop: '20px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            color: 'var(--accent-primary)',
+                                            fontFamily: "'Space Mono', monospace",
+                                            fontSize: '13px'
+                                        }}>
+                                            Read more →
+                                        </div>
+                                    </article>
+                                ))}
+                            </div>
+                        )}
+                    </section>
+                    <Footer />
+                </div>
+            );
+        };
+
+        // Login Page
+        const LoginPage = ({ setCurrentPage }) => {
+            const { login } = useAuth();
+            const [username, setUsername] = useState('');
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
+            const [loading, setLoading] = useState(false);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                setError('');
+
+                try {
+                    const res = await fetch(`${API_URL}/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+
+                    const data = await res.json();
+
+                    if (res.ok) {
+                        login(data.user, data.token);
+                        setCurrentPage('admin');
+                    } else {
+                        setError(data.error || 'Login failed');
+                    }
+                } catch (err) {
+                    // Demo mode - allow login with admin/admin
+                    if (username === 'admin' && password === 'admin') {
+                        login({ username: 'admin', role: 'admin' }, 'demo-token');
+                        setCurrentPage('admin');
+                    } else {
+                        setError('Use admin/admin for demo access');
+                    }
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div style={{
+                    paddingTop: '100px',
+                    minHeight: '100vh',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                }}>
+                    <div style={{
+                        width: '100%',
+                        maxWidth: '420px',
+                        padding: '48px',
+                        background: 'var(--bg-secondary)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '24px',
+                        boxShadow: 'var(--glow-secondary)'
+                    }}>
+                        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+                            <svg width="60" height="60" viewBox="0 0 40 40" style={{ marginBottom: '16px' }}>
+                                <circle cx="20" cy="20" r="18" stroke="var(--accent-primary)" strokeWidth="2" fill="none"/>
+                                <circle cx="20" cy="20" r="6" fill="var(--accent-primary)"/>
+                            </svg>
+                            <h1 style={{
+                                fontFamily: "'Syne', sans-serif",
+                                fontSize: '32px',
+                                fontWeight: 700,
+                                marginBottom: '8px'
+                            }}>
+                                Admin Login
+                            </h1>
+                            <p style={{
+                                fontFamily: "'Space Mono', monospace",
+                                fontSize: '12px',
+                                color: 'var(--text-muted)'
+                            }}>
+                                Demo: admin / admin
+                            </p>
+                        </div>
+
+                        <form onSubmit={handleSubmit}>
+                            <div style={{ marginBottom: '20px' }}>
+                                <label style={{
+                                    display: 'block',
+                                    fontFamily: "'Space Mono', monospace",
+                                    fontSize: '11px',
+                                    color: 'var(--text-muted)',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '1px',
+                                    marginBottom: '8px'
+                                }}>
+                                    Username
+                                </label>
+                                <input
+                                    type="text"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '14px 18px',
+                                        background: 'var(--bg-tertiary)',
+                                        border: '2px solid var(--border-color)',
+                                        borderRadius: '12px',
+                                        color: 'var(--text-primary)',
+                                        fontFamily: "'DM Sans', sans-serif",
+                                        fontSize: '16px',
+                                        outline: 'none',
+                                        transition: 'border-color 0.3s ease'
+                                    }}
+                                    onFocus={(e) => e.target.style.borderColor = 'var(--accent-primary)'}
+                                    onBlur={(e) => e.target.style.borderColor = 'var(--border-color)'}
+                                />
+                            </div>
+
+                            <div style={{ marginBottom: '24px' }}>
+                                <label style={{
+                                    display: 'block',
+                                    fontFamily: "'Space Mono', monospace",
+                                    fontSize: '11px',
+                                    color: 'var(--text-muted)',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '1px',
+                                    marginBottom: '8px'
+                                }}>
+                                    Password
+                                </label>
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '14px 18px',
+                                        background: 'var(--bg-tertiary)',
+                                        border: '2px solid var(--border-color)',
+                                        borderRadius: '12px',
+                                        color: 'var(--text-primary)',
+                                        fontFamily: "'DM Sans', sans-serif",
+                                        fontSize: '16px',
+                                        outline: 'none',
+                                        transition: 'border-color 0.3s ease'
+                                    }}
+                                    onFocus={(e) => e.target.style.borderColor = 'var(--accent-primary)'}
+                                    onBlur={(e) => e.target.style.borderColor = 'var(--border-color)'}
+                                />
+                            </div>
+
+                            {error && (
+                                <div style={{
+                                    padding: '12px',
+                                    background: 'rgba(255, 107, 107, 0.1)',
+                                    border: '1px solid #ff6b6b',
+                                    borderRadius: '8px',
+                                    color: '#ff6b6b',
+                                    fontFamily: "'Space Mono', monospace",
+                                    fontSize: '13px',
+                                    marginBottom: '20px'
+                                }}>
+                                    {error}
+                                </div>
+                            )}
+
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                style={{
+                                    width: '100%',
+                                    padding: '16px',
+                                    background: 'var(--accent-primary)',
+                                    border: 'none',
+                                    borderRadius: '12px',
+                                    color: 'var(--bg-primary)',
+                                    fontFamily: "'Space Mono', monospace",
+                                    fontSize: '14px',
+                                    fontWeight: 700,
+                                    cursor: loading ? 'not-allowed' : 'pointer',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '2px',
+                                    opacity: loading ? 0.7 : 1,
+                                    transition: 'all 0.3s ease'
+                                }}
+                            >
+                                {loading ? 'Authenticating...' : 'Login'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
+        // Admin Page
+        const AdminPage = ({ setCurrentPage }) => {
+            const { user } = useAuth();
+            const [activeTab, setActiveTab] = useState('posts');
+            const [posts, setPosts] = useState([]);
+            const [editingPost, setEditingPost] = useState(null);
+            const [formData, setFormData] = useState({
+                title: '',
+                excerpt: '',
+                content: '',
+                category: 'Announcement'
+            });
+
+            useEffect(() => {
+                if (!user) {
+                    setCurrentPage('login');
+                    return;
+                }
+                fetchPosts();
+            }, [user]);
+
+            const fetchPosts = async () => {
+                try {
+                    const res = await fetch(`${API_URL}/posts`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        setPosts(data);
+                    }
+                } catch (err) {
+                    // Demo posts
+                    setPosts([
+                        { id: 1, title: 'Introducing Fairblock', excerpt: 'Learn about our project...', category: 'Announcement', date: '2025-01-15' },
+                        { id: 2, title: 'Understanding MEV', excerpt: 'MEV explained...', category: 'Technical', date: '2025-01-10' }
+                    ]);
+                }
+            };
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                const newPost = {
+                    id: editingPost?.id || Date.now(),
+                    ...formData,
+                    date: new Date().toISOString().split('T')[0]
+                };
+
+                if (editingPost) {
+                    setPosts(posts.map(p => p.id === editingPost.id ? newPost : p));
+                } else {
+                    setPosts([newPost, ...posts]);
+                }
+
+                setFormData({ title: '', excerpt: '', content: '', category: 'Announcement' });
+                setEditingPost(null);
+            };
+
+            const deletePost = (id) => {
+                setPosts(posts.filter(p => p.id !== id));
+            };
+
+            const editPost = (post) => {
+                setEditingPost(post);
+                setFormData({
+                    title: post.title,
+                    excerpt: post.excerpt,
+                    content: post.content || '',
+                    category: post.category
+                });
+            };
+
+            if (!user) return null;
+
+            const tabStyle = (isActive) => ({
+                padding: '12px 24px',
+                background: isActive ? 'var(--accent-primary)' : 'transparent',
+                border: 'none',
+                borderRadius: '8px',
+                color: isActive ? 'var(--bg-primary)' : 'var(--text-secondary)',
+                fontFamily: "'Space Mono', monospace",
+                fontSize: '13px',
+                cursor: 'pointer',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                transition: 'all 0.3s ease'
+            });
+
+            const inputStyle = {
+                width: '100%',
+                padding: '14px 18px',
+                background: 'var(--bg-tertiary)',
+                border: '2px solid var(--border-color)',
+                borderRadius: '12px',
+                color: 'var(--text-primary)',
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: '15px',
+                outline: 'none',
+                transition: 'border-color 0.3s ease',
+                marginBottom: '16px'
+            };
+
+            return (
+                <div style={{ paddingTop: '100px', minHeight: '100vh' }}>
+                    <section style={{ padding: '60px', maxWidth: '1200px', margin: '0 auto' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+                            <div>
+                                <h1 style={{
+                                    fontFamily: "'Syne', sans-serif",
+                                    fontSize: '48px',
+                                    fontWeight: 800,
+                                    marginBottom: '8px'
+                                }}>
+                                    Admin Dashboard
+                                </h1>
+                                <p style={{
+                                    fontFamily: "'Space Mono', monospace",
+                                    fontSize: '13px',
+                                    color: 'var(--text-muted)'
+                                }}>
+                                    Welcome back, <span style={{ color: 'var(--accent-primary)' }}>{user.username}</span>
+                                </p>
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <button style={tabStyle(activeTab === 'posts')} onClick={() => setActiveTab('posts')}>
+                                    Blog Posts
+                                </button>
+                                <button style={tabStyle(activeTab === 'new')} onClick={() => { setActiveTab('new'); setEditingPost(null); setFormData({ title: '', excerpt: '', content: '', category: 'Announcement' }); }}>
+                                    + New Post
+                                </button>
+                            </div>
+                        </div>
+
+                        {activeTab === 'posts' && (
+                            <div style={{
+                                background: 'var(--bg-secondary)',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '20px',
+                                overflow: 'hidden'
+                            }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                    <thead>
+                                        <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                            <th style={{ padding: '20px', textAlign: 'left', fontFamily: "'Space Mono', monospace", fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Title</th>
+                                            <th style={{ padding: '20px', textAlign: 'left', fontFamily: "'Space Mono', monospace", fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Category</th>
+                                            <th style={{ padding: '20px', textAlign: 'left', fontFamily: "'Space Mono', monospace", fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Date</th>
+                                            <th style={{ padding: '20px', textAlign: 'right', fontFamily: "'Space Mono', monospace", fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {posts.map(post => (
+                                            <tr key={post.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                                <td style={{ padding: '20px', color: 'var(--text-primary)', fontWeight: 500 }}>{post.title}</td>
+                                                <td style={{ padding: '20px' }}>
+                                                    <span style={{
+                                                        padding: '4px 12px',
+                                                        background: 'rgba(0, 245, 212, 0.1)',
+                                                        color: 'var(--accent-primary)',
+                                                        borderRadius: '100px',
+                                                        fontFamily: "'Space Mono', monospace",
+                                                        fontSize: '11px'
+                                                    }}>
+                                                        {post.category}
+                                                    </span>
+                                                </td>
+                                                <td style={{ padding: '20px', color: 'var(--text-muted)', fontFamily: "'Space Mono', monospace", fontSize: '13px' }}>{post.date}</td>
+                                                <td style={{ padding: '20px', textAlign: 'right' }}>
+                                                    <button
+                                                        onClick={() => { editPost(post); setActiveTab('new'); }}
+                                                        style={{
+                                                            padding: '8px 16px',
+                                                            background: 'transparent',
+                                                            border: '1px solid var(--accent-primary)',
+                                                            borderRadius: '8px',
+                                                            color: 'var(--accent-primary)',
+                                                            fontFamily: "'Space Mono', monospace",
+                                                            fontSize: '12px',
+                                                            cursor: 'pointer',
+                                                            marginRight: '8px'
+                                                        }}
+                                                    >
+                                                        Edit
+                                                    </button>
+                                                    <button
+                                                        onClick={() => deletePost(post.id)}
+                                                        style={{
+                                                            padding: '8px 16px',
+                                                            background: 'rgba(255, 107, 107, 0.1)',
+                                                            border: '1px solid #ff6b6b',
+                                                            borderRadius: '8px',
+                                                            color: '#ff6b6b',
+                                                            fontFamily: "'Space Mono', monospace",
+                                                            fontSize: '12px',
+                                                            cursor: 'pointer'
+                                                        }}
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+
+                        {activeTab === 'new' && (
+                            <div style={{
+                                background: 'var(--bg-secondary)',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '20px',
+                                padding: '40px'
+                            }}>
+                                <h2 style={{
+                                    fontFamily: "'Syne', sans-serif",
+                                    fontSize: '28px',
+                                    fontWeight: 700,
+                                    marginBottom: '32px'
+                                }}>
+                                    {editingPost ? 'Edit Post' : 'Create New Post'}
+                                </h2>
+                                <form onSubmit={handleSubmit}>
+                                    <label style={{ display: 'block', fontFamily: "'Space Mono', monospace", fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+                                        Title
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formData.title}
+                                        onChange={(e) => setFormData({...formData, title: e.target.value})}
+                                        style={inputStyle}
+                                        placeholder="Enter post title..."
+                                        required
+                                    />
+
+                                    <label style={{ display: 'block', fontFamily: "'Space Mono', monospace", fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+                                        Category
+                                    </label>
+                                    <select
+                                        value={formData.category}
+                                        onChange={(e) => setFormData({...formData, category: e.target.value})}
+                                        style={{...inputStyle, cursor: 'pointer'}}
+                                    >
+                                        <option value="Announcement">Announcement</option>
+                                        <option value="Technical">Technical</option>
+                                        <option value="Update">Update</option>
+                                        <option value="Tutorial">Tutorial</option>
+                                    </select>
+
+                                    <label style={{ display: 'block', fontFamily: "'Space Mono', monospace", fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+                                        Excerpt
+                                    </label>
+                                    <textarea
+                                        value={formData.excerpt}
+                                        onChange={(e) => setFormData({...formData, excerpt: e.target.value})}
+                                        style={{...inputStyle, minHeight: '100px', resize: 'vertical'}}
+                                        placeholder="Brief description..."
+                                        required
+                                    />
+
+                                    <label style={{ display: 'block', fontFamily: "'Space Mono', monospace", fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+                                        Content
+                                    </label>
+                                    <textarea
+                                        value={formData.content}
+                                        onChange={(e) => setFormData({...formData, content: e.target.value})}
+                                        style={{...inputStyle, minHeight: '250px', resize: 'vertical'}}
+                                        placeholder="Full post content..."
+                                    />
+
+                                    <div style={{ display: 'flex', gap: '16px', marginTop: '24px' }}>
+                                        <button
+                                            type="submit"
+                                            style={{
+                                                padding: '14px 32px',
+                                                background: 'var(--accent-primary)',
+                                                border: 'none',
+                                                borderRadius: '12px',
+                                                color: 'var(--bg-primary)',
+                                                fontFamily: "'Space Mono', monospace",
+                                                fontSize: '14px',
+                                                fontWeight: 700,
+                                                cursor: 'pointer',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '1px'
+                                            }}
+                                        >
+                                            {editingPost ? 'Update Post' : 'Publish Post'}
+                                        </button>
+                                        {editingPost && (
+                                            <button
+                                                type="button"
+                                                onClick={() => { setEditingPost(null); setFormData({ title: '', excerpt: '', content: '', category: 'Announcement' }); }}
+                                                style={{
+                                                    padding: '14px 32px',
+                                                    background: 'transparent',
+                                                    border: '2px solid var(--border-color)',
+                                                    borderRadius: '12px',
+                                                    color: 'var(--text-secondary)',
+                                                    fontFamily: "'Space Mono', monospace",
+                                                    fontSize: '14px',
+                                                    cursor: 'pointer',
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: '1px'
+                                                }}
+                                            >
+                                                Cancel
+                                            </button>
+                                        )}
+                                    </div>
+                                </form>
+                            </div>
+                        )}
+                    </section>
+                </div>
+            );
+        };
+
+        // ============ MAIN APP ============
+
+        const App = () => {
+            const [currentPage, setCurrentPage] = useState('home');
+            const [user, setUser] = useState(null);
+            const [token, setToken] = useState(null);
+
+            useEffect(() => {
+                // Check for stored auth
+                const storedUser = localStorage.getItem('fairblock_user');
+                const storedToken = localStorage.getItem('fairblock_token');
+                if (storedUser && storedToken) {
+                    setUser(JSON.parse(storedUser));
+                    setToken(storedToken);
+                }
+            }, []);
+
+            const login = (userData, authToken) => {
+                setUser(userData);
+                setToken(authToken);
+                localStorage.setItem('fairblock_user', JSON.stringify(userData));
+                localStorage.setItem('fairblock_token', authToken);
+            };
+
+            const logout = () => {
+                setUser(null);
+                setToken(null);
+                localStorage.removeItem('fairblock_user');
+                localStorage.removeItem('fairblock_token');
+                setCurrentPage('home');
+            };
+
+            const renderPage = () => {
+                switch (currentPage) {
+                    case 'home':
+                        return <HomePage setCurrentPage={setCurrentPage} />;
+                    case 'about':
+                        return <AboutPage />;
+                    case 'game':
+                        return <GamePage />;
+                    case 'blog':
+                        return <BlogPage />;
+                    case 'login':
+                        return <LoginPage setCurrentPage={setCurrentPage} />;
+                    case 'admin':
+                        return <AdminPage setCurrentPage={setCurrentPage} />;
+                    default:
+                        return <HomePage setCurrentPage={setCurrentPage} />;
+                }
+            };
+
+            return (
+                <AuthContext.Provider value={{ user, token, login, logout }}>
+                    <AnimatedBackground />
+                    <Navigation currentPage={currentPage} setCurrentPage={setCurrentPage} />
+                    {renderPage()}
+                </AuthContext.Provider>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
