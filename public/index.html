@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fairblock | Multi-Language Blog</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&family=Noto+Sans+Arabic:wght@300;400;500;700&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0a0b;
+            --bg-secondary: #111113;
+            --bg-tertiary: #18181b;
+            --accent: #00f5d4;
+            --accent2: #7b2cbf;
+            --text: #fafafa;
+            --text2: #a1a1aa;
+            --text3: #71717a;
+            --border: rgba(255,255,255,0.08);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg-primary); color: var(--text); line-height: 1.6; }
+        body.rtl { direction: rtl; }
+        ::selection { background: var(--accent); color: var(--bg-primary); }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-secondary); }
+        ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .animate { animation: fadeIn 0.5s ease forwards; }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, createContext, useContext } = React;
+
+// ========== CONFIG ==========
+const LANGS = {
+    en: { name: 'English', flag: '🇬🇧', dir: 'ltr', font: "'DM Sans'" },
+    fa: { name: 'فارسی', flag: '🇮🇷', dir: 'rtl', font: "'Vazirmatn'" },
+    ar: { name: 'العربية', flag: '🇸🇦', dir: 'rtl', font: "'Noto Sans Arabic'" },
+    zh: { name: '中文', flag: '🇨🇳', dir: 'ltr', font: "'Noto Sans SC'" },
+    ja: { name: '日本語', flag: '🇯🇵', dir: 'ltr', font: "'Noto Sans JP'" },
+    ko: { name: '한국어', flag: '🇰🇷', dir: 'ltr', font: "'Noto Sans KR'" },
+    es: { name: 'Español', flag: '🇪🇸', dir: 'ltr', font: "'DM Sans'" },
+    fr: { name: 'Français', flag: '🇫🇷', dir: 'ltr', font: "'DM Sans'" },
+    de: { name: 'Deutsch', flag: '🇩🇪', dir: 'ltr', font: "'DM Sans'" },
+    ru: { name: 'Русский', flag: '🇷🇺', dir: 'ltr', font: "'DM Sans'" },
+    tr: { name: 'Türkçe', flag: '🇹🇷', dir: 'ltr', font: "'DM Sans'" },
+    pt: { name: 'Português', flag: '🇧🇷', dir: 'ltr', font: "'DM Sans'" },
+    vi: { name: 'Tiếng Việt', flag: '🇻🇳', dir: 'ltr', font: "'DM Sans'" },
+    id: { name: 'Indonesia', flag: '🇮🇩', dir: 'ltr', font: "'DM Sans'" },
+    hi: { name: 'हिन्दी', flag: '🇮🇳', dir: 'ltr', font: "'DM Sans'" },
+    th: { name: 'ไทย', flag: '🇹🇭', dir: 'ltr', font: "'DM Sans'" },
+};
+
+const T = {
+    en: { home:'Home', about:'About', game:'Game', blog:'Blog', login:'Login', logout:'Logout', admin:'Admin', tagline:'Pre-Execution Privacy', hero1:'One Network.', hero2:'Infinite Privacy.', heroDesc:'The decentralized cryptographic network providing confidential on-chain execution and MEV protection.', enterGame:'Enter Game', learnMore:'Learn More', blogTitle:'Blog', readMore:'Read more', noPosts:'No posts in this language yet.', adminPanel:'Admin Dashboard', posts:'Blog Posts', newPost:'+ New Post', title:'Title', excerpt:'Excerpt', content:'Content', category:'Category', language:'Language', save:'Save', cancel:'Cancel', delete:'Delete', edit:'Edit', fonts:'Font Management', addFont:'Add Font', fontName:'Font Name', fontUrl:'Google Font URL', welcome:'Welcome back', selectLang:'Select Language', gameTitle:'Decrypt the Message', gameDesc:'Decrypt Caesar cipher messages before time runs out.', start:'START', won:'YOU WON!', score:'Score', playAgain:'Play Again', level:'Level', time:'Time', hint:'Hint', decrypt:'DECRYPT' },
+    fa: { home:'خانه', about:'درباره', game:'بازی', blog:'وبلاگ', login:'ورود', logout:'خروج', admin:'مدیریت', tagline:'حریم خصوصی پیش از اجرا', hero1:'یک شبکه.', hero2:'حریم خصوصی بی‌نهایت.', heroDesc:'شبکه رمزنگاری غیرمتمرکز برای اجرای محرمانه و محافظت MEV.', enterGame:'ورود به بازی', learnMore:'بیشتر بدانید', blogTitle:'وبلاگ', readMore:'ادامه مطلب', noPosts:'هنوز پستی به این زبان وجود ندارد.', adminPanel:'پنل مدیریت', posts:'پست‌ها', newPost:'+ پست جدید', title:'عنوان', excerpt:'خلاصه', content:'محتوا', category:'دسته‌بندی', language:'زبان', save:'ذخیره', cancel:'لغو', delete:'حذف', edit:'ویرایش', fonts:'مدیریت فونت', addFont:'افزودن فونت', fontName:'نام فونت', fontUrl:'آدرس فونت گوگل', welcome:'خوش آمدید', selectLang:'انتخاب زبان', gameTitle:'پیام را رمزگشایی کن', gameDesc:'پیام‌های رمز سزار را قبل از اتمام زمان رمزگشایی کنید.', start:'شروع', won:'بردی!', score:'امتیاز', playAgain:'بازی مجدد', level:'مرحله', time:'زمان', hint:'راهنما', decrypt:'رمزگشایی' },
+    ar: { home:'الرئيسية', about:'حول', game:'لعبة', blog:'مدونة', login:'دخول', logout:'خروج', admin:'إدارة', tagline:'خصوصية ما قبل التنفيذ', hero1:'شبكة واحدة.', hero2:'خصوصية لا نهائية.', heroDesc:'شبكة تشفير لامركزية للتنفيذ السري وحماية MEV.', enterGame:'دخول اللعبة', learnMore:'اعرف المزيد', blogTitle:'المدونة', readMore:'اقرأ المزيد', noPosts:'لا توجد منشورات بهذه اللغة.', adminPanel:'لوحة الإدارة', posts:'المنشورات', newPost:'+ جديد', title:'العنوان', excerpt:'ملخص', content:'المحتوى', category:'الفئة', language:'اللغة', save:'حفظ', cancel:'إلغاء', delete:'حذف', edit:'تعديل', fonts:'إدارة الخطوط', addFont:'إضافة خط', fontName:'اسم الخط', fontUrl:'رابط خط جوجل', welcome:'مرحباً', selectLang:'اختر اللغة', gameTitle:'فك التشفير', gameDesc:'فك رموز قيصر قبل نفاد الوقت.', start:'ابدأ', won:'فزت!', score:'النقاط', playAgain:'العب مجدداً', level:'المستوى', time:'الوقت', hint:'تلميح', decrypt:'فك' },
+    zh: { home:'首页', about:'关于', game:'游戏', blog:'博客', login:'登录', logout:'退出', admin:'管理', tagline:'预执行隐私', hero1:'一个网络。', hero2:'无限隐私。', heroDesc:'去中心化加密网络，提供链上机密执行和MEV保护。', enterGame:'进入游戏', learnMore:'了解更多', blogTitle:'博客', readMore:'阅读更多', noPosts:'该语言暂无文章。', adminPanel:'管理面板', posts:'文章', newPost:'+ 新文章', title:'标题', excerpt:'摘要', content:'内容', category:'分类', language:'语言', save:'保存', cancel:'取消', delete:'删除', edit:'编辑', fonts:'字体管理', addFont:'添加字体', fontName:'字体名', fontUrl:'谷歌字体链接', welcome:'欢迎回来', selectLang:'选择语言', gameTitle:'解密消息', gameDesc:'在时间结束前解密凯撒密码。', start:'开始', won:'你赢了！', score:'得分', playAgain:'再玩', level:'关卡', time:'时间', hint:'提示', decrypt:'解密' },
+    es: { home:'Inicio', about:'Acerca', game:'Juego', blog:'Blog', login:'Entrar', logout:'Salir', admin:'Admin', tagline:'Privacidad Pre-Ejecución', hero1:'Una Red.', hero2:'Privacidad Infinita.', heroDesc:'Red criptográfica descentralizada con ejecución confidencial y protección MEV.', enterGame:'Entrar', learnMore:'Más Info', blogTitle:'Blog', readMore:'Leer más', noPosts:'No hay publicaciones en este idioma.', adminPanel:'Panel Admin', posts:'Publicaciones', newPost:'+ Nueva', title:'Título', excerpt:'Extracto', content:'Contenido', category:'Categoría', language:'Idioma', save:'Guardar', cancel:'Cancelar', delete:'Eliminar', edit:'Editar', fonts:'Fuentes', addFont:'Añadir', fontName:'Nombre', fontUrl:'URL Google Font', welcome:'Bienvenido', selectLang:'Idioma', gameTitle:'Descifra', gameDesc:'Descifra mensajes Caesar antes del tiempo.', start:'INICIAR', won:'¡GANASTE!', score:'Puntos', playAgain:'Otra vez', level:'Nivel', time:'Tiempo', hint:'Pista', decrypt:'DESCIFRAR' },
+    fr: { home:'Accueil', about:'À propos', game:'Jeu', blog:'Blog', login:'Connexion', logout:'Déconnexion', admin:'Admin', tagline:'Confidentialité Pré-Exécution', hero1:'Un Réseau.', hero2:'Confidentialité Infinie.', heroDesc:'Réseau cryptographique décentralisé avec exécution confidentielle et protection MEV.', enterGame:'Jouer', learnMore:'En savoir plus', blogTitle:'Blog', readMore:'Lire', noPosts:'Aucun article dans cette langue.', adminPanel:'Tableau de bord', posts:'Articles', newPost:'+ Nouveau', title:'Titre', excerpt:'Extrait', content:'Contenu', category:'Catégorie', language:'Langue', save:'Enregistrer', cancel:'Annuler', delete:'Supprimer', edit:'Modifier', fonts:'Polices', addFont:'Ajouter', fontName:'Nom', fontUrl:'URL Google Font', welcome:'Bienvenue', selectLang:'Langue', gameTitle:'Déchiffrez', gameDesc:'Déchiffrez les messages Caesar avant la fin.', start:'COMMENCER', won:'GAGNÉ!', score:'Score', playAgain:'Rejouer', level:'Niveau', time:'Temps', hint:'Indice', decrypt:'DÉCHIFFRER' },
+    de: { home:'Start', about:'Über', game:'Spiel', blog:'Blog', login:'Anmelden', logout:'Abmelden', admin:'Admin', tagline:'Pre-Execution Datenschutz', hero1:'Ein Netzwerk.', hero2:'Unendliche Privatsphäre.', heroDesc:'Dezentrales kryptographisches Netzwerk für vertrauliche Ausführung und MEV-Schutz.', enterGame:'Spielen', learnMore:'Mehr', blogTitle:'Blog', readMore:'Weiterlesen', noPosts:'Keine Beiträge in dieser Sprache.', adminPanel:'Admin-Bereich', posts:'Beiträge', newPost:'+ Neu', title:'Titel', excerpt:'Auszug', content:'Inhalt', category:'Kategorie', language:'Sprache', save:'Speichern', cancel:'Abbrechen', delete:'Löschen', edit:'Bearbeiten', fonts:'Schriften', addFont:'Hinzufügen', fontName:'Name', fontUrl:'Google Font URL', welcome:'Willkommen', selectLang:'Sprache', gameTitle:'Entschlüssle', gameDesc:'Entschlüssle Caesar-Nachrichten vor Zeitablauf.', start:'STARTEN', won:'GEWONNEN!', score:'Punkte', playAgain:'Nochmal', level:'Level', time:'Zeit', hint:'Hinweis', decrypt:'ENTSCHLÜSSELN' },
+    ru: { home:'Главная', about:'О нас', game:'Игра', blog:'Блог', login:'Вход', logout:'Выход', admin:'Админ', tagline:'Конфиденциальность до выполнения', hero1:'Одна сеть.', hero2:'Бесконечная приватность.', heroDesc:'Децентрализованная сеть для конфиденциального выполнения и защиты MEV.', enterGame:'Играть', learnMore:'Подробнее', blogTitle:'Блог', readMore:'Читать', noPosts:'Нет публикаций на этом языке.', adminPanel:'Панель управления', posts:'Публикации', newPost:'+ Новая', title:'Заголовок', excerpt:'Описание', content:'Содержание', category:'Категория', language:'Язык', save:'Сохранить', cancel:'Отмена', delete:'Удалить', edit:'Изменить', fonts:'Шрифты', addFont:'Добавить', fontName:'Название', fontUrl:'URL Google Font', welcome:'Добро пожаловать', selectLang:'Язык', gameTitle:'Расшифруй', gameDesc:'Расшифруй шифр Цезаря до конца времени.', start:'СТАРТ', won:'ПОБЕДА!', score:'Очки', playAgain:'Ещё раз', level:'Уровень', time:'Время', hint:'Подсказка', decrypt:'РАСШИФРОВАТЬ' },
+    tr: { home:'Ana Sayfa', about:'Hakkında', game:'Oyun', blog:'Blog', login:'Giriş', logout:'Çıkış', admin:'Yönetim', tagline:'Ön-Yürütme Gizliliği', hero1:'Tek Ağ.', hero2:'Sınırsız Gizlilik.', heroDesc:'Gizli yürütme ve MEV koruması sağlayan merkezi olmayan ağ.', enterGame:'Oyuna Gir', learnMore:'Daha Fazla', blogTitle:'Blog', readMore:'Devamı', noPosts:'Bu dilde yazı yok.', adminPanel:'Yönetim Paneli', posts:'Yazılar', newPost:'+ Yeni', title:'Başlık', excerpt:'Özet', content:'İçerik', category:'Kategori', language:'Dil', save:'Kaydet', cancel:'İptal', delete:'Sil', edit:'Düzenle', fonts:'Fontlar', addFont:'Ekle', fontName:'Ad', fontUrl:'Google Font URL', welcome:'Hoş geldin', selectLang:'Dil Seç', gameTitle:'Çöz', gameDesc:'Caesar şifresini süre bitmeden çöz.', start:'BAŞLA', won:'KAZANDIN!', score:'Skor', playAgain:'Tekrar', level:'Seviye', time:'Süre', hint:'İpucu', decrypt:'ŞİFRE ÇÖZ' },
+    pt: { home:'Início', about:'Sobre', game:'Jogo', blog:'Blog', login:'Entrar', logout:'Sair', admin:'Admin', tagline:'Privacidade Pré-Execução', hero1:'Uma Rede.', hero2:'Privacidade Infinita.', heroDesc:'Rede criptográfica descentralizada com execução confidencial e proteção MEV.', enterGame:'Jogar', learnMore:'Saiba Mais', blogTitle:'Blog', readMore:'Ler mais', noPosts:'Nenhum post neste idioma.', adminPanel:'Painel', posts:'Posts', newPost:'+ Novo', title:'Título', excerpt:'Resumo', content:'Conteúdo', category:'Categoria', language:'Idioma', save:'Salvar', cancel:'Cancelar', delete:'Excluir', edit:'Editar', fonts:'Fontes', addFont:'Adicionar', fontName:'Nome', fontUrl:'URL Google Font', welcome:'Bem-vindo', selectLang:'Idioma', gameTitle:'Decifre', gameDesc:'Decifre mensagens Caesar antes do tempo acabar.', start:'INICIAR', won:'VENCEU!', score:'Pontos', playAgain:'Jogar', level:'Nível', time:'Tempo', hint:'Dica', decrypt:'DECIFRAR' },
+    ja: { home:'ホーム', about:'概要', game:'ゲーム', blog:'ブログ', login:'ログイン', logout:'ログアウト', admin:'管理', tagline:'事前実行プライバシー', hero1:'一つのネットワーク', hero2:'無限のプライバシー', heroDesc:'機密性の高いオンチェーン実行とMEV保護を提供する分散型ネットワーク。', enterGame:'ゲーム開始', learnMore:'詳細', blogTitle:'ブログ', readMore:'続きを読む', noPosts:'この言語の投稿はありません。', adminPanel:'管理パネル', posts:'投稿', newPost:'+ 新規', title:'タイトル', excerpt:'抜粋', content:'内容', category:'カテゴリ', language:'言語', save:'保存', cancel:'キャンセル', delete:'削除', edit:'編集', fonts:'フォント', addFont:'追加', fontName:'名前', fontUrl:'Google Font URL', welcome:'ようこそ', selectLang:'言語選択', gameTitle:'復号せよ', gameDesc:'時間切れ前にシーザー暗号を復号しよう。', start:'スタート', won:'勝利！', score:'スコア', playAgain:'もう一度', level:'レベル', time:'時間', hint:'ヒント', decrypt:'復号' },
+    ko: { home:'홈', about:'소개', game:'게임', blog:'블로그', login:'로그인', logout:'로그아웃', admin:'관리', tagline:'사전 실행 프라이버시', hero1:'하나의 네트워크', hero2:'무한한 프라이버시', heroDesc:'기밀 온체인 실행과 MEV 보호를 제공하는 탈중앙화 네트워크.', enterGame:'게임 시작', learnMore:'더 알아보기', blogTitle:'블로그', readMore:'더 읽기', noPosts:'이 언어의 게시물이 없습니다.', adminPanel:'관리자', posts:'게시물', newPost:'+ 새 글', title:'제목', excerpt:'요약', content:'내용', category:'카테고리', language:'언어', save:'저장', cancel:'취소', delete:'삭제', edit:'수정', fonts:'폰트', addFont:'추가', fontName:'이름', fontUrl:'Google Font URL', welcome:'환영합니다', selectLang:'언어 선택', gameTitle:'해독하라', gameDesc:'시간 전에 시저 암호를 해독하세요.', start:'시작', won:'승리!', score:'점수', playAgain:'다시', level:'레벨', time:'시간', hint:'힌트', decrypt:'해독' },
+    vi: { home:'Trang chủ', about:'Giới thiệu', game:'Trò chơi', blog:'Blog', login:'Đăng nhập', logout:'Đăng xuất', admin:'Quản trị', tagline:'Quyền riêng tư trước thực thi', hero1:'Một mạng lưới.', hero2:'Quyền riêng tư vô hạn.', heroDesc:'Mạng mật mã phi tập trung với thực thi bí mật và bảo vệ MEV.', enterGame:'Vào chơi', learnMore:'Tìm hiểu', blogTitle:'Blog', readMore:'Đọc thêm', noPosts:'Chưa có bài viết.', adminPanel:'Bảng điều khiển', posts:'Bài viết', newPost:'+ Mới', title:'Tiêu đề', excerpt:'Tóm tắt', content:'Nội dung', category:'Danh mục', language:'Ngôn ngữ', save:'Lưu', cancel:'Hủy', delete:'Xóa', edit:'Sửa', fonts:'Font', addFont:'Thêm', fontName:'Tên', fontUrl:'URL Google Font', welcome:'Chào mừng', selectLang:'Chọn ngôn ngữ', gameTitle:'Giải mã', gameDesc:'Giải mã Caesar trước khi hết thời gian.', start:'BẮT ĐẦU', won:'THẮNG!', score:'Điểm', playAgain:'Chơi lại', level:'Cấp', time:'Thời gian', hint:'Gợi ý', decrypt:'GIẢI MÃ' },
+    id: { home:'Beranda', about:'Tentang', game:'Permainan', blog:'Blog', login:'Masuk', logout:'Keluar', admin:'Admin', tagline:'Privasi Pra-Eksekusi', hero1:'Satu Jaringan.', hero2:'Privasi Tanpa Batas.', heroDesc:'Jaringan kriptografi terdesentralisasi dengan eksekusi rahasia dan perlindungan MEV.', enterGame:'Main', learnMore:'Pelajari', blogTitle:'Blog', readMore:'Baca', noPosts:'Belum ada posting.', adminPanel:'Panel Admin', posts:'Posting', newPost:'+ Baru', title:'Judul', excerpt:'Ringkasan', content:'Konten', category:'Kategori', language:'Bahasa', save:'Simpan', cancel:'Batal', delete:'Hapus', edit:'Edit', fonts:'Font', addFont:'Tambah', fontName:'Nama', fontUrl:'URL Google Font', welcome:'Selamat datang', selectLang:'Pilih Bahasa', gameTitle:'Dekripsi', gameDesc:'Dekripsi pesan Caesar sebelum waktu habis.', start:'MULAI', won:'MENANG!', score:'Skor', playAgain:'Main lagi', level:'Level', time:'Waktu', hint:'Petunjuk', decrypt:'DEKRIPSI' },
+    hi: { home:'होम', about:'परिचय', game:'खेल', blog:'ब्लॉग', login:'लॉगिन', logout:'लॉगआउट', admin:'एडमिन', tagline:'प्री-एक्सीक्यूशन प्राइवेसी', hero1:'एक नेटवर्क।', hero2:'अनंत गोपनीयता।', heroDesc:'विकेंद्रीकृत क्रिप्टोग्राफिक नेटवर्क जो गोपनीय निष्पादन और MEV सुरक्षा प्रदान करता है।', enterGame:'खेलें', learnMore:'और जानें', blogTitle:'ब्लॉग', readMore:'और पढ़ें', noPosts:'इस भाषा में कोई पोस्ट नहीं।', adminPanel:'एडमिन पैनल', posts:'पोस्ट', newPost:'+ नया', title:'शीर्षक', excerpt:'सारांश', content:'सामग्री', category:'श्रेणी', language:'भाषा', save:'सहेजें', cancel:'रद्द', delete:'हटाएं', edit:'संपादित', fonts:'फॉन्ट', addFont:'जोड़ें', fontName:'नाम', fontUrl:'Google Font URL', welcome:'स्वागत है', selectLang:'भाषा चुनें', gameTitle:'डिक्रिप्ट करें', gameDesc:'समय से पहले सीज़र सिफर को डिक्रिप्ट करें।', start:'शुरू', won:'जीत!', score:'स्कोर', playAgain:'फिर से', level:'स्तर', time:'समय', hint:'संकेत', decrypt:'डिक्रिप्ट' },
+    th: { home:'หน้าแรก', about:'เกี่ยวกับ', game:'เกม', blog:'บล็อก', login:'เข้าสู่ระบบ', logout:'ออก', admin:'ผู้ดูแล', tagline:'ความเป็นส่วนตัวก่อนการดำเนินการ', hero1:'เครือข่ายเดียว', hero2:'ความเป็นส่วนตัวไม่จำกัด', heroDesc:'เครือข่ายเข้ารหัสแบบกระจายศูนย์สำหรับการดำเนินการที่เป็นความลับและการป้องกัน MEV', enterGame:'เข้าเกม', learnMore:'เรียนรู้เพิ่มเติม', blogTitle:'บล็อก', readMore:'อ่านเพิ่ม', noPosts:'ยังไม่มีโพสต์', adminPanel:'แผงควบคุม', posts:'โพสต์', newPost:'+ ใหม่', title:'หัวข้อ', excerpt:'บทคัดย่อ', content:'เนื้อหา', category:'หมวดหมู่', language:'ภาษา', save:'บันทึก', cancel:'ยกเลิก', delete:'ลบ', edit:'แก้ไข', fonts:'ฟอนต์', addFont:'เพิ่ม', fontName:'ชื่อ', fontUrl:'URL Google Font', welcome:'ยินดีต้อนรับ', selectLang:'เลือกภาษา', gameTitle:'ถอดรหัส', gameDesc:'ถอดรหัส Caesar ก่อนหมดเวลา', start:'เริ่ม', won:'ชนะ!', score:'คะแนน', playAgain:'เล่นอีก', level:'ระดับ', time:'เวลา', hint:'คำใบ้', decrypt:'ถอดรหัส' },
+};
+
+// Contexts
+const AuthContext = createContext(null);
+const LangContext = createContext(null);
+const useAuth = () => useContext(AuthContext);
+const useLang = () => useContext(LangContext);
+
+// Storage helpers
+const storage = {
+    get: (key, def) => { try { return JSON.parse(localStorage.getItem(key)) || def; } catch { return def; } },
+    set: (key, val) => localStorage.setItem(key, JSON.stringify(val))
+};
+
+// Language Selector Component
+const LangSelector = () => {
+    const { lang, setLang, t } = useLang();
+    const [open, setOpen] = useState(false);
+    
+    return (
+        <div style={{ position: 'relative' }}>
+            <button onClick={() => setOpen(!open)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px', background: 'var(--bg-tertiary)', border: '1px solid var(--border)', borderRadius: '100px', color: 'var(--text)', cursor: 'pointer', fontSize: '13px' }}>
+                <span style={{ fontSize: '18px' }}>{LANGS[lang].flag}</span>
+                <span>{LANGS[lang].name}</span>
+                <span style={{ opacity: 0.5, fontSize: '10px' }}>▼</span>
+            </button>
+            {open && (
+                <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '16px', padding: '8px', zIndex: 1000, minWidth: '180px', maxHeight: '350px', overflowY: 'auto', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
+                    {Object.entries(LANGS).map(([code, l]) => (
+                        <button key={code} onClick={() => { setLang(code); setOpen(false); }} style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '10px 14px', background: lang === code ? 'rgba(0,245,212,0.1)' : 'transparent', border: 'none', borderRadius: '8px', color: lang === code ? 'var(--accent)' : 'var(--text)', cursor: 'pointer', textAlign: 'left', fontSize: '14px' }}>
+                            <span style={{ fontSize: '18px' }}>{l.flag}</span>
+                            <span>{l.name}</span>
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
+// Navigation
+const Nav = ({ page, setPage }) => {
+    const { user, logout } = useAuth();
+    const { t, dir } = useLang();
+    const [scrolled, setScrolled] = useState(false);
+    
+    useEffect(() => {
+        const h = () => setScrolled(window.scrollY > 50);
+        window.addEventListener('scroll', h);
+        return () => window.removeEventListener('scroll', h);
+    }, []);
+
+    const btn = (active) => ({ padding: '8px 16px', background: active ? 'rgba(0,245,212,0.1)' : 'transparent', border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`, borderRadius: '100px', color: active ? 'var(--accent)' : 'var(--text2)', cursor: 'pointer', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px' });
+
+    return (
+        <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, padding: '16px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: scrolled ? 'rgba(10,10,11,0.95)' : 'transparent', backdropFilter: scrolled ? 'blur(20px)' : 'none', borderBottom: scrolled ? '1px solid var(--border)' : 'none', flexDirection: dir === 'rtl' ? 'row-reverse' : 'row' }}>
+            <div onClick={() => setPage('home')} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontFamily: "'Syne'", fontWeight: 800, fontSize: '20px' }}>
+                <svg width="28" height="28" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" stroke="var(--accent)" strokeWidth="2" fill="none"/><circle cx="20" cy="20" r="6" fill="var(--accent)"/></svg>
+                FAIRBLOCK
+            </div>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexDirection: dir === 'rtl' ? 'row-reverse' : 'row' }}>
+                {['home', 'about', 'game', 'blog'].map(p => (
+                    <button key={p} style={btn(page === p)} onClick={() => setPage(p)}>{t(p)}</button>
+                ))}
+                {user ? (
+                    <>
+                        <button style={btn(page === 'admin')} onClick={() => setPage('admin')}>{t('admin')}</button>
+                        <button style={{...btn(false), background: 'rgba(255,107,107,0.1)', borderColor: '#ff6b6b', color: '#ff6b6b'}} onClick={logout}>{t('logout')}</button>
+                    </>
+                ) : (
+                    <button style={btn(page === 'login')} onClick={() => setPage('login')}>{t('login')}</button>
+                )}
+                <LangSelector />
+            </div>
+        </nav>
+    );
+};
+
+// Hero
+const Hero = ({ setPage }) => {
+    const { t, dir } = useLang();
+    return (
+        <section style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '120px 40px 60px', textAlign: 'center' }}>
+            <div style={{ marginBottom: '30px', animation: 'float 5s ease-in-out infinite' }}>
+                <svg width="100" height="100" viewBox="0 0 120 120"><defs><linearGradient id="g1" x1="0" y1="0" x2="120" y2="120"><stop offset="0%" stopColor="#00f5d4"/><stop offset="100%" stopColor="#7b2cbf"/></linearGradient></defs><circle cx="60" cy="60" r="55" stroke="url(#g1)" strokeWidth="2" strokeDasharray="8 4" fill="none"/><circle cx="60" cy="60" r="12" fill="var(--accent)"/><text x="60" y="65" textAnchor="middle" fill="var(--bg-primary)" fontSize="12" fontWeight="bold">FB</text></svg>
+            </div>
+            <h1 style={{ fontFamily: "'Syne'", fontSize: 'clamp(40px,10vw,100px)', fontWeight: 800, background: 'linear-gradient(135deg, #00f5d4, #7b2cbf, #ff6b6b)', backgroundSize: '200% 200%', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '20px' }}>FAIRBLOCK</h1>
+            <p style={{ fontSize: '15px', color: 'var(--text2)', letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '16px' }}>{t('tagline')}</p>
+            <h2 style={{ fontFamily: "'Syne'", fontSize: 'clamp(20px,4vw,40px)', marginBottom: '30px' }}>{t('hero1')}<br/><span style={{ color: 'var(--accent)' }}>{t('hero2')}</span></h2>
+            <p style={{ maxWidth: '550px', color: 'var(--text2)', marginBottom: '40px', fontSize: '15px' }}>{t('heroDesc')}</p>
+            <div style={{ display: 'flex', gap: '16px', flexDirection: dir === 'rtl' ? 'row-reverse' : 'row' }}>
+                <button onClick={() => setPage('game')} style={{ padding: '14px 36px', background: 'var(--accent)', border: 'none', borderRadius: '100px', color: 'var(--bg-primary)', fontWeight: 700, cursor: 'pointer', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '2px' }}>{t('enterGame')}</button>
+                <button onClick={() => setPage('about')} style={{ padding: '14px 36px', background: 'transparent', border: '2px solid var(--border)', borderRadius: '100px', color: 'var(--text)', fontWeight: 700, cursor: 'pointer', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '2px' }}>{t('learnMore')}</button>
+            </div>
+        </section>
+    );
+};
+
+// Footer
+const Footer = () => (
+    <footer style={{ padding: '50px', background: 'var(--bg-secondary)', borderTop: '1px solid var(--border)', textAlign: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', marginBottom: '16px', fontFamily: "'Syne'", fontWeight: 800, fontSize: '18px' }}>
+            <svg width="22" height="22" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" stroke="var(--accent)" strokeWidth="2" fill="none"/><circle cx="20" cy="20" r="6" fill="var(--accent)"/></svg>
+            FAIRBLOCK
+        </div>
+        <p style={{ color: 'var(--text3)', fontSize: '12px' }}>© 2025 Fairblock Network</p>
+    </footer>
+);
+
+// Home Page
+const HomePage = ({ setPage }) => (
+    <>
+        <Hero setPage={setPage} />
+        <Footer />
+    </>
+);
+
+// About Page
+const AboutPage = () => {
+    const { t } = useLang();
+    const sections = [
+        { title: 'What is Fairblock?', text: 'Fairblock is a decentralized cryptographic network designed to provide "pre-execution privacy" and confidential on-chain execution across ecosystems.' },
+        { title: 'Threshold IBE', text: 'Fairblock leverages advanced cryptography – notably Threshold Identity-Based Encryption (tIBE) and witness encryption.' },
+        { title: 'How It Works', text: 'Users encrypt their transaction payload with a key tied to a future block number. Once sealed, validators collaboratively derive the decryption key.' },
+        { title: 'Use Cases', text: 'Sealed-bid auctions, private voting, MEV-protected trading, confidential stablecoin transfers, on-chain gaming, and much more.' }
+    ];
+    return (
+        <div style={{ paddingTop: '100px', minHeight: '100vh' }}>
+            <section style={{ padding: '50px', maxWidth: '850px', margin: '0 auto' }}>
+                <h1 style={{ fontFamily: "'Syne'", fontSize: '50px', fontWeight: 800, marginBottom: '50px', background: 'linear-gradient(135deg, #00f5d4, #7b2cbf)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('about')}</h1>
+                {sections.map((s, i) => (
+                    <div key={i} className="animate" style={{ marginBottom: '30px', padding: '30px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '16px', animationDelay: `${i * 0.1}s` }}>
+                        <h2 style={{ fontFamily: "'Syne'", fontSize: '22px', marginBottom: '12px', color: 'var(--accent)' }}>{s.title}</h2>
+                        <p style={{ color: 'var(--text2)', fontSize: '15px', lineHeight: 1.7 }}>{s.text}</p>
+                    </div>
+                ))}
+            </section>
+            <Footer />
+        </div>
+    );
+};
+
+// Game Page
+const GamePage = () => {
+    const { t } = useLang();
+    const [state, setState] = useState('menu');
+    const [level, setLevel] = useState(1);
+    const [msg, setMsg] = useState('');
+    const [enc, setEnc] = useState('');
+    const [guess, setGuess] = useState('');
+    const [hint, setHint] = useState('');
+    const [score, setScore] = useState(0);
+    const [time, setTime] = useState(60);
+
+    const words = [
+        { w: 'FAIRBLOCK', h: 'Project name' }, { w: 'PRIVACY', h: 'What we protect' },
+        { w: 'THRESHOLD', h: 'Encryption type' }, { w: 'COSMOS', h: 'SDK' },
+        { w: 'DECRYPTION', h: 'Opposite of encryption' }, { w: 'VALIDATOR', h: 'Network nodes' },
+        { w: 'MEMPOOL', h: 'Tx waiting area' }, { w: 'AUCTION', h: 'Sealed-bid ___' }
+    ];
+
+    const caesar = (t, s) => t.split('').map(c => c.match(/[A-Z]/) ? String.fromCharCode(((c.charCodeAt(0) - 65 + s) % 26) + 65) : c).join('');
+    const load = (l) => { const { w, h } = words[(l - 1) % words.length]; setMsg(w); setEnc(caesar(w, l + 2)); setHint(h); setGuess(''); };
+    const start = () => { setState('play'); setLevel(1); setScore(0); setTime(60); load(1); };
+    const check = () => { if (guess.toUpperCase() === msg) { setScore(s => s + Math.max(100 - (60 - time) * 2, 10)); if (level >= 8) setState('won'); else { setLevel(l => l + 1); setTime(t => t + 15); load(level + 1); } } };
+
+    useEffect(() => {
+        if (state === 'play' && time > 0) { const t = setTimeout(() => setTime(time - 1), 1000); return () => clearTimeout(t); }
+        else if (time === 0 && state === 'play') setState('menu');
+    }, [time, state]);
+
+    const box = { paddingTop: '100px', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '50px' };
+
+    if (state === 'menu') return (
+        <div style={box}>
+            <h1 style={{ fontFamily: "'Syne'", fontSize: '45px', fontWeight: 800, marginBottom: '20px', color: 'var(--accent)' }}>🔐 {t('gameTitle')}</h1>
+            <p style={{ color: 'var(--text2)', marginBottom: '35px', maxWidth: '450px', textAlign: 'center' }}>{t('gameDesc')}</p>
+            <button onClick={start} style={{ padding: '18px 50px', background: 'var(--accent)', border: 'none', borderRadius: '100px', color: 'var(--bg-primary)', fontFamily: "'Syne'", fontSize: '18px', fontWeight: 700, cursor: 'pointer' }}>{t('start')}</button>
+        </div>
+    );
+
+    if (state === 'won') return (
+        <div style={box}>
+            <h1 style={{ fontFamily: "'Syne'", fontSize: '60px', color: 'var(--accent)', marginBottom: '20px' }}>🎉 {t('won')}</h1>
+            <p style={{ fontSize: '22px', marginBottom: '30px' }}>{t('score')}: <span style={{ color: 'var(--accent)' }}>{score}</span></p>
+            <button onClick={start} style={{ padding: '14px 36px', background: 'var(--accent)', border: 'none', borderRadius: '100px', color: 'var(--bg-primary)', fontWeight: 700, cursor: 'pointer' }}>{t('playAgain')}</button>
+        </div>
+    );
+
+    return (
+        <div style={box}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: '500px', marginBottom: '35px', fontSize: '13px', color: 'var(--text3)' }}>
+                <span>{t('level')}: <b style={{ color: 'var(--accent)', fontSize: '20px' }}>{level}</b>/8</span>
+                <span>{t('score')}: <b style={{ color: 'var(--accent)' }}>{score}</b></span>
+                <span style={{ color: time < 15 ? '#ff6b6b' : 'inherit' }}>{t('time')}: <b style={{ color: time < 15 ? '#ff6b6b' : 'var(--accent)' }}>{time}s</b></span>
+            </div>
+            <div style={{ padding: '35px 50px', background: 'var(--bg-secondary)', border: '2px solid var(--accent)', borderRadius: '16px', marginBottom: '25px', boxShadow: '0 0 50px rgba(0,245,212,0.15)' }}>
+                <p style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '2px' }}>Encrypted:</p>
+                <p style={{ fontFamily: "'Syne'", fontSize: '30px', fontWeight: 700, color: 'var(--accent)', letterSpacing: '6px' }}>{enc}</p>
+            </div>
+            <p style={{ fontSize: '13px', color: 'var(--text2)', marginBottom: '25px' }}>💡 {t('hint')}: {hint}</p>
+            <div style={{ display: 'flex', gap: '12px' }}>
+                <input value={guess} onChange={e => setGuess(e.target.value.toUpperCase())} onKeyPress={e => e.key === 'Enter' && check()} placeholder="..." style={{ padding: '14px 20px', width: '250px', background: 'var(--bg-tertiary)', border: '2px solid var(--border)', borderRadius: '10px', color: 'var(--text)', fontSize: '16px', letterSpacing: '3px', textTransform: 'uppercase', outline: 'none' }} />
+                <button onClick={check} style={{ padding: '14px 28px', background: 'var(--accent)', border: 'none', borderRadius: '10px', color: 'var(--bg-primary)', fontWeight: 700, cursor: 'pointer' }}>{t('decrypt')}</button>
+            </div>
+        </div>
+    );
+};
+
+// Blog Page
+const BlogPage = () => {
+    const { t, lang } = useLang();
+    const [posts, setPosts] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        setLoading(true);
+        const saved = storage.get(`posts_${lang}`, []);
+        if (saved.length > 0) setPosts(saved);
+        else setPosts([
+            { id: 1, title: 'Welcome to Fairblock Blog', excerpt: 'This is where you\'ll find updates about Fairblock in your language.', category: 'Announcement', date: '2025-01-15' }
+        ]);
+        setLoading(false);
+    }, [lang]);
+
+    const colors = { Announcement: '#00f5d4', Technical: '#7b2cbf', Update: '#ff6b6b', Tutorial: '#ffd93d' };
+
+    return (
+        <div style={{ paddingTop: '100px', minHeight: '100vh' }}>
+            <section style={{ padding: '50px', maxWidth: '900px', margin: '0 auto' }}>
+                <h1 style={{ fontFamily: "'Syne'", fontSize: '50px', fontWeight: 800, marginBottom: '50px', background: 'linear-gradient(135deg, #00f5d4, #7b2cbf)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('blogTitle')}</h1>
+                {loading ? (
+                    <div style={{ textAlign: 'center', padding: '50px' }}><div style={{ width: '40px', height: '40px', border: '3px solid var(--border)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto' }} /></div>
+                ) : posts.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '50px', color: 'var(--text3)' }}>{t('noPosts')}</div>
+                ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                        {posts.map((p, i) => (
+                            <article key={p.id} className="animate" style={{ padding: '30px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '16px', animationDelay: `${i * 0.1}s` }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '14px' }}>
+                                    <span style={{ padding: '5px 12px', background: `${colors[p.category] || '#00f5d4'}20`, color: colors[p.category] || '#00f5d4', borderRadius: '100px', fontSize: '11px', textTransform: 'uppercase' }}>{p.category}</span>
+                                    <span style={{ fontSize: '12px', color: 'var(--text3)' }}>{p.date}</span>
+                                </div>
+                                <h2 style={{ fontFamily: "'Syne'", fontSize: '22px', marginBottom: '10px' }}>{p.title}</h2>
+                                <p style={{ color: 'var(--text2)', fontSize: '14px', lineHeight: 1.6 }}>{p.excerpt}</p>
+                                <div style={{ marginTop: '16px', color: 'var(--accent)', fontSize: '13px' }}>{t('readMore')} →</div>
+                            </article>
+                        ))}
+                    </div>
+                )}
+            </section>
+            <Footer />
+        </div>
+    );
+};
+
+// Login Page
+const LoginPage = ({ setPage }) => {
+    const { login } = useAuth();
+    const { t } = useLang();
+    const [user, setUser] = useState('');
+    const [pass, setPass] = useState('');
+    const [err, setErr] = useState('');
+
+    const submit = (e) => {
+        e.preventDefault();
+        if (user === 'admin' && pass === 'admin') {
+            login({ username: 'admin', role: 'admin' });
+            setPage('admin');
+        } else setErr('Use admin / admin');
+    };
+
+    const inp = { width: '100%', padding: '14px 18px', background: 'var(--bg-tertiary)', border: '2px solid var(--border)', borderRadius: '12px', color: 'var(--text)', fontSize: '15px', outline: 'none', marginBottom: '14px' };
+
+    return (
+        <div style={{ paddingTop: '100px', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '100%', maxWidth: '380px', padding: '40px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '20px' }}>
+                <h1 style={{ fontFamily: "'Syne'", fontSize: '28px', marginBottom: '8px', textAlign: 'center' }}>{t('login')}</h1>
+                <p style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '30px', textAlign: 'center' }}>Demo: admin / admin</p>
+                <form onSubmit={submit}>
+                    <input value={user} onChange={e => setUser(e.target.value)} placeholder="Username" style={inp} />
+                    <input type="password" value={pass} onChange={e => setPass(e.target.value)} placeholder="Password" style={inp} />
+                    {err && <div style={{ padding: '10px', background: 'rgba(255,107,107,0.1)', border: '1px solid #ff6b6b', borderRadius: '8px', color: '#ff6b6b', fontSize: '12px', marginBottom: '14px' }}>{err}</div>}
+                    <button type="submit" style={{ width: '100%', padding: '14px', background: 'var(--accent)', border: 'none', borderRadius: '12px', color: 'var(--bg-primary)', fontWeight: 700, cursor: 'pointer', textTransform: 'uppercase', fontSize: '13px' }}>{t('login')}</button>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+// Admin Page
+const AdminPage = ({ setPage }) => {
+    const { user } = useAuth();
+    const { t, lang } = useLang();
+    const [tab, setTab] = useState('posts');
+    const [selLang, setSelLang] = useState(lang);
+    const [posts, setPosts] = useState([]);
+    const [editing, setEditing] = useState(null);
+    const [form, setForm] = useState({ title: '', excerpt: '', content: '', category: 'Announcement' });
+    const [fonts, setFonts] = useState([]);
+    const [newFont, setNewFont] = useState({ name: '', url: '' });
+
+    useEffect(() => {
+        if (!user) { setPage('login'); return; }
+        setPosts(storage.get(`posts_${selLang}`, []));
+        setFonts(storage.get('custom_fonts', []));
+    }, [user, selLang]);
+
+    const savePost = () => {
+        const post = { id: editing?.id || Date.now(), ...form, date: new Date().toISOString().split('T')[0] };
+        const updated = editing ? posts.map(p => p.id === editing.id ? post : p) : [post, ...posts];
+        setPosts(updated);
+        storage.set(`posts_${selLang}`, updated);
+        setForm({ title: '', excerpt: '', content: '', category: 'Announcement' });
+        setEditing(null);
+        setTab('posts');
+    };
+
+    const deletePost = (id) => {
+        const updated = posts.filter(p => p.id !== id);
+        setPosts(updated);
+        storage.set(`posts_${selLang}`, updated);
+    };
+
+    const addFont = () => {
+        if (!newFont.name || !newFont.url) return;
+        const updated = [...fonts, newFont];
+        setFonts(updated);
+        storage.set('custom_fonts', updated);
+        // Add font to page
+        const link = document.createElement('link');
+        link.href = newFont.url;
+        link.rel = 'stylesheet';
+        document.head.appendChild(link);
+        setNewFont({ name: '', url: '' });
+    };
+
+    const deleteFont = (i) => {
+        const updated = fonts.filter((_, idx) => idx !== i);
+        setFonts(updated);
+        storage.set('custom_fonts', updated);
+    };
+
+    if (!user) return null;
+
+    const btnTab = (active) => ({ padding: '10px 20px', background: active ? 'var(--accent)' : 'transparent', border: 'none', borderRadius: '8px', color: active ? 'var(--bg-primary)' : 'var(--text2)', cursor: 'pointer', fontSize: '13px', fontWeight: 600 });
+    const inp = { width: '100%', padding: '12px 16px', background: 'var(--bg-tertiary)', border: '2px solid var(--border)', borderRadius: '10px', color: 'var(--text)', fontSize: '14px', outline: 'none', marginBottom: '14px' };
+
+    return (
+        <div style={{ paddingTop: '100px', minHeight: '100vh' }}>
+            <section style={{ padding: '50px', maxWidth: '1100px', margin: '0 auto' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '35px', flexWrap: 'wrap', gap: '16px' }}>
+                    <div>
+                        <h1 style={{ fontFamily: "'Syne'", fontSize: '38px', fontWeight: 800, marginBottom: '6px' }}>{t('adminPanel')}</h1>
+                        <p style={{ fontSize: '13px', color: 'var(--text3)' }}>{t('welcome')}, <span style={{ color: 'var(--accent)' }}>{user.username}</span></p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <button style={btnTab(tab === 'posts')} onClick={() => setTab('posts')}>{t('posts')}</button>
+                        <button style={btnTab(tab === 'new')} onClick={() => { setTab('new'); setEditing(null); setForm({ title: '', excerpt: '', content: '', category: 'Announcement' }); }}>{t('newPost')}</button>
+                        <button style={btnTab(tab === 'fonts')} onClick={() => setTab('fonts')}>{t('fonts')}</button>
+                    </div>
+                </div>
+
+                {/* Language Selector for Posts */}
+                {(tab === 'posts' || tab === 'new') && (
+                    <div style={{ marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '13px', color: 'var(--text3)' }}>{t('language')}:</span>
+                        {Object.entries(LANGS).map(([code, l]) => (
+                            <button key={code} onClick={() => setSelLang(code)} style={{ padding: '6px 14px', background: selLang === code ? 'var(--accent)' : 'var(--bg-tertiary)', border: 'none', borderRadius: '100px', color: selLang === code ? 'var(--bg-primary)' : 'var(--text)', cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span>{l.flag}</span> {l.name}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                {/* Posts List */}
+                {tab === 'posts' && (
+                    <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '16px', overflow: 'hidden' }}>
+                        {posts.length === 0 ? (
+                            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text3)' }}>{t('noPosts')}</div>
+                        ) : (
+                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                <thead>
+                                    <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                                        <th style={{ padding: '16px', textAlign: 'left', fontSize: '11px', color: 'var(--text3)', textTransform: 'uppercase' }}>{t('title')}</th>
+                                        <th style={{ padding: '16px', textAlign: 'left', fontSize: '11px', color: 'var(--text3)', textTransform: 'uppercase' }}>{t('category')}</th>
+                                        <th style={{ padding: '16px', textAlign: 'left', fontSize: '11px', color: 'var(--text3)', textTransform: 'uppercase' }}>Date</th>
+                                        <th style={{ padding: '16px', textAlign: 'right', fontSize: '11px', color: 'var(--text3)', textTransform: 'uppercase' }}>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {posts.map(p => (
+                                        <tr key={p.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                                            <td style={{ padding: '16px', fontWeight: 500 }}>{p.title}</td>
+                                            <td style={{ padding: '16px' }}><span style={{ padding: '4px 10px', background: 'rgba(0,245,212,0.1)', color: 'var(--accent)', borderRadius: '100px', fontSize: '11px' }}>{p.category}</span></td>
+                                            <td style={{ padding: '16px', color: 'var(--text3)', fontSize: '13px' }}>{p.date}</td>
+                                            <td style={{ padding: '16px', textAlign: 'right' }}>
+                                                <button onClick={() => { setEditing(p); setForm(p); setTab('new'); }} style={{ padding: '6px 14px', background: 'transparent', border: '1px solid var(--accent)', borderRadius: '6px', color: 'var(--accent)', cursor: 'pointer', fontSize: '12px', marginRight: '8px' }}>{t('edit')}</button>
+                                                <button onClick={() => deletePost(p.id)} style={{ padding: '6px 14px', background: 'rgba(255,107,107,0.1)', border: '1px solid #ff6b6b', borderRadius: '6px', color: '#ff6b6b', cursor: 'pointer', fontSize: '12px' }}>{t('delete')}</button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+                )}
+
+                {/* New/Edit Post */}
+                {tab === 'new' && (
+                    <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '16px', padding: '30px' }}>
+                        <h2 style={{ fontFamily: "'Syne'", fontSize: '22px', marginBottom: '25px' }}>{editing ? t('edit') : t('newPost')} ({LANGS[selLang].flag} {LANGS[selLang].name})</h2>
+                        <input value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder={t('title')} style={inp} />
+                        <select value={form.category} onChange={e => setForm({...form, category: e.target.value})} style={{...inp, cursor: 'pointer'}}>
+                            <option value="Announcement">Announcement</option>
+                            <option value="Technical">Technical</option>
+                            <option value="Update">Update</option>
+                            <option value="Tutorial">Tutorial</option>
+                        </select>
+                        <textarea value={form.excerpt} onChange={e => setForm({...form, excerpt: e.target.value})} placeholder={t('excerpt')} style={{...inp, minHeight: '80px', resize: 'vertical'}} />
+                        <textarea value={form.content} onChange={e => setForm({...form, content: e.target.value})} placeholder={t('content')} style={{...inp, minHeight: '180px', resize: 'vertical'}} />
+                        <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+                            <button onClick={savePost} style={{ padding: '12px 28px', background: 'var(--accent)', border: 'none', borderRadius: '10px', color: 'var(--bg-primary)', fontWeight: 700, cursor: 'pointer', fontSize: '13px' }}>{t('save')}</button>
+                            {editing && <button onClick={() => { setEditing(null); setForm({ title: '', excerpt: '', content: '', category: 'Announcement' }); }} style={{ padding: '12px 28px', background: 'transparent', border: '2px solid var(--border)', borderRadius: '10px', color: 'var(--text2)', cursor: 'pointer', fontSize: '13px' }}>{t('cancel')}</button>}
+                        </div>
+                    </div>
+                )}
+
+                {/* Font Management */}
+                {tab === 'fonts' && (
+                    <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '16px', padding: '30px' }}>
+                        <h2 style={{ fontFamily: "'Syne'", fontSize: '22px', marginBottom: '25px' }}>{t('fonts')}</h2>
+                        <div style={{ display: 'flex', gap: '12px', marginBottom: '25px', flexWrap: 'wrap' }}>
+                            <input value={newFont.name} onChange={e => setNewFont({...newFont, name: e.target.value})} placeholder={t('fontName')} style={{...inp, flex: 1, minWidth: '150px', marginBottom: 0}} />
+                            <input value={newFont.url} onChange={e => setNewFont({...newFont, url: e.target.value})} placeholder={t('fontUrl') + ' (e.g., https://fonts.googleapis.com/css2?family=...)'} style={{...inp, flex: 2, minWidth: '300px', marginBottom: 0}} />
+                            <button onClick={addFont} style={{ padding: '12px 24px', background: 'var(--accent)', border: 'none', borderRadius: '10px', color: 'var(--bg-primary)', fontWeight: 700, cursor: 'pointer', fontSize: '13px' }}>{t('addFont')}</button>
+                        </div>
+                        {fonts.length > 0 && (
+                            <div>
+                                <h3 style={{ fontSize: '14px', color: 'var(--text3)', marginBottom: '14px' }}>Installed Fonts:</h3>
+                                {fonts.map((f, i) => (
+                                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--bg-tertiary)', borderRadius: '8px', marginBottom: '8px' }}>
+                                        <span style={{ fontFamily: `'${f.name}', sans-serif` }}>{f.name}</span>
+                                        <button onClick={() => deleteFont(i)} style={{ padding: '5px 12px', background: 'rgba(255,107,107,0.1)', border: '1px solid #ff6b6b', borderRadius: '6px', color: '#ff6b6b', cursor: 'pointer', fontSize: '11px' }}>{t('delete')}</button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+            </section>
+        </div>
+    );
+};
+
+// Main App
+const App = () => {
+    const [page, setPage] = useState('home');
+    const [user, setUser] = useState(null);
+    const [lang, setLang] = useState(() => storage.get('lang', 'en'));
+
+    useEffect(() => {
+        const saved = storage.get('user', null);
+        if (saved) setUser(saved);
+    }, []);
+
+    useEffect(() => {
+        storage.set('lang', lang);
+        document.body.className = LANGS[lang].dir === 'rtl' ? 'rtl' : '';
+        document.body.style.fontFamily = LANGS[lang].font + ', sans-serif';
+    }, [lang]);
+
+    const login = (u) => { setUser(u); storage.set('user', u); };
+    const logout = () => { setUser(null); localStorage.removeItem('user'); setPage('home'); };
+    const t = (key) => T[lang]?.[key] || T.en[key] || key;
+    const dir = LANGS[lang].dir;
+
+    const render = () => {
+        switch (page) {
+            case 'home': return <HomePage setPage={setPage} />;
+            case 'about': return <AboutPage />;
+            case 'game': return <GamePage />;
+            case 'blog': return <BlogPage />;
+            case 'login': return <LoginPage setPage={setPage} />;
+            case 'admin': return <AdminPage setPage={setPage} />;
+            default: return <HomePage setPage={setPage} />;
+        }
+    };
+
+    return (
+        <AuthContext.Provider value={{ user, login, logout }}>
+            <LangContext.Provider value={{ lang, setLang, t, dir }}>
+                <Nav page={page} setPage={setPage} />
+                {render()}
+            </LangContext.Provider>
+        </AuthContext.Provider>
+    );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
